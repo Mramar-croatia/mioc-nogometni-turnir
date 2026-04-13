@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install:*)",
+      "Bash(cp .env.example .env)",
+      "Bash(npm run:*)"
+    ]
+  }
+}
