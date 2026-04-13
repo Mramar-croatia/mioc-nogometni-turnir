@@ -7,9 +7,9 @@ import { classNames } from '../../lib/utils';
 
 const NAV = [
   { to: '/admin', label: 'Utakmice', end: true },
+  { to: '/admin/ekipe', label: 'Ekipe' },
   { to: '/admin/ladder', label: 'Ladder' },
   { to: '/admin/organizatori', label: 'Organizatori' },
-  { to: '/admin/inicijalizacija', label: 'Init' },
 ];
 
 export default function AdminLayout() {

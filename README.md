@@ -80,12 +80,12 @@ Aplikacija ne dopušta otvorenu registraciju. Prvi admin se kreira ručno:
    - Polje: `addedAt` (number) = `0`
    - Save.
 
-### 7) Inicijaliziraj turnir (jednom)
+### 7) Unos podataka
 
-1. U aplikaciji idi na `/#/admin/login` (ili klikni "admin" na praznoj početnici).
-2. Prijavi se.
-3. Otvori karticu **Init** i klikni **Pokreni inicijalizaciju**.
-4. Učitat će se 26 ekipa i 13 utakmica I. kola iz `public/data.json`.
+U adminu (`/#/admin`):
+- **Ekipe** → **+ Nova** za svaku ekipu (kapetan, igrači, divizija).
+- **Utakmice** → **+ Nova** za svaku utakmicu I. kola (datum, vrijeme, ekipe).
+- **Ladder** → koristi se za dodavanje utakmica II. faze (double elimination) kasnije.
 
 ### 8) Dodaj ostale organizatore
 

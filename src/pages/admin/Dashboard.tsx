@@ -10,16 +10,6 @@ export default function Dashboard() {
   if (matches === null || teams === null) return <Loading />;
   const teamMap = new Map(teams.map((t) => [t.id, t]));
 
-  if (matches.length === 0) {
-    return (
-      <div className="card p-6 text-center">
-        <h2 className="font-display text-2xl mb-2">Početak rada</h2>
-        <p className="text-black/55 mb-4">Nema utakmica. Učitaj početne podatke iz <code>data.json</code>.</p>
-        <Link to="/admin/inicijalizacija" className="btn-primary">Inicijaliziraj turnir</Link>
-      </div>
-    );
-  }
-
   const grouped = new Map<string, typeof matches>();
   matches.forEach((m) => {
     const arr = grouped.get(m.date) ?? [];
@@ -30,8 +20,23 @@ export default function Dashboard() {
 
   return (
     <div>
-      <h1 className="font-display text-3xl mb-1 tracking-wide">Utakmice</h1>
+      <div className="flex items-center justify-between mb-1">
+        <h1 className="font-display text-3xl tracking-wide">Utakmice</h1>
+        <Link to="/admin/utakmica/nova" className="btn-primary">+ Nova</Link>
+      </div>
       <p className="text-sm text-black/50 mb-5">Klikni utakmicu za unos rezultata i golova.</p>
+
+      {matches.length === 0 && (
+        <div className="card p-6 text-center">
+          <h2 className="font-display text-xl mb-1">Nema utakmica</h2>
+          <p className="text-black/55 mb-3">Dodaj prvu utakmicu klikom na <strong>+ Nova</strong>.</p>
+          {teams.length === 0 && (
+            <p className="text-sm text-black/50">
+              Nema ni ekipa. Prvo otvori <Link to="/admin/ekipe" className="text-brand-blue underline">Ekipe</Link>.
+            </p>
+          )}
+        </div>
+      )}
 
       {groups.map(([date, list]) => (
         <div key={date} className="mb-6">

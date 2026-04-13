@@ -11,6 +11,17 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID,
 };
 
+const missing = Object.entries(firebaseConfig)
+  .filter(([, v]) => !v)
+  .map(([k]) => k);
+
+if (missing.length > 0) {
+  throw new Error(
+    `Firebase nije konfiguriran. Nedostaju varijable: ${missing.join(', ')}. ` +
+    `Provjeri da su VITE_FIREBASE_* secrets postavljeni u GitHub Actions (Settings → Secrets and variables → Actions).`
+  );
+}
+
 export const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app);
 export const auth = getAuth(app);

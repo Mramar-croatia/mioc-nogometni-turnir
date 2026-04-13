@@ -35,8 +35,7 @@ export default function Home() {
 
       {empty && (
         <div className="card p-6 text-center">
-          <p className="text-black/50 mb-3">Turnir još nije inicijaliziran.</p>
-          <Link to="/admin/login" className="btn-primary">Otvori admin</Link>
+          <p className="text-black/50">Raspored utakmica još nije objavljen.</p>
         </div>
       )}
 

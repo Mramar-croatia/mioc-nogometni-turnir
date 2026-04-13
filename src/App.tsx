@@ -11,9 +11,11 @@ import AdminLogin from './pages/admin/Login';
 import AdminLayout from './pages/admin/AdminLayout';
 import AdminDashboard from './pages/admin/Dashboard';
 import AdminMatchEdit from './pages/admin/MatchEdit';
+import AdminMatchCreate from './pages/admin/MatchCreate';
 import AdminBracket from './pages/admin/BracketAdmin';
 import AdminAdmins from './pages/admin/Admins';
-import AdminSeed from './pages/admin/Seed';
+import AdminTeams from './pages/admin/TeamsAdmin';
+import AdminTeamEdit from './pages/admin/TeamEdit';
 
 export default function App() {
   return (
@@ -31,10 +33,13 @@ export default function App() {
       <Route path="admin/login" element={<AdminLogin />} />
       <Route path="admin" element={<AdminLayout />}>
         <Route index element={<AdminDashboard />} />
+        <Route path="utakmica/nova" element={<AdminMatchCreate />} />
         <Route path="utakmica/:id" element={<AdminMatchEdit />} />
+        <Route path="ekipe" element={<AdminTeams />} />
+        <Route path="ekipe/nova" element={<AdminTeamEdit />} />
+        <Route path="ekipe/:id" element={<AdminTeamEdit />} />
         <Route path="ladder" element={<AdminBracket />} />
         <Route path="organizatori" element={<AdminAdmins />} />
-        <Route path="inicijalizacija" element={<AdminSeed />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />

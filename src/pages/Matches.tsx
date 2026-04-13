@@ -11,16 +11,13 @@ export default function Matches() {
   const teams = useTeams();
   const [filter, setFilter] = useState<Filter>('all');
 
-  if (matches === null || teams === null) return <Loading />;
-
-  const teamMap = new Map(teams.map((t) => [t.id, t]));
-  const filtered = matches.filter((m) =>
-    filter === 'all' ? true :
-    filter === 'finished' ? m.status === 'finished' :
-    m.status === 'scheduled' || m.status === 'live'
-  );
-
   const grouped = useMemo(() => {
+    if (!matches) return [];
+    const filtered = matches.filter((m) =>
+      filter === 'all' ? true :
+      filter === 'finished' ? m.status === 'finished' :
+      m.status === 'scheduled' || m.status === 'live'
+    );
     const map = new Map<string, typeof filtered>();
     filtered.forEach((m) => {
       const arr = map.get(m.date) ?? [];
@@ -28,7 +25,10 @@ export default function Matches() {
       map.set(m.date, arr);
     });
     return Array.from(map.entries()).sort(([a], [b]) => a.localeCompare(b));
-  }, [filtered]);
+  }, [matches, filter]);
+
+  if (matches === null || teams === null) return <Loading />;
+  const teamMap = new Map(teams.map((t) => [t.id, t]));
 
   return (
     <div>
