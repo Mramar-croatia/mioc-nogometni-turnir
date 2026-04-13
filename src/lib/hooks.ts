@@ -33,11 +33,18 @@ export function useTeam(id: string | undefined) {
 export function useMatches() {
   const [matches, setMatches] = useState<Match[] | null>(null);
   useEffect(() => {
-    const q = query(collection(db, 'matches'), orderBy('date'), orderBy('time'));
-    return onSnapshot(q, (snap) => {
-      const list: Match[] = snap.docs.map((d) => ({ id: d.id, ...(d.data() as any) }));
-      setMatches(list);
-    }, () => setMatches([]));
+    return onSnapshot(
+      collection(db, 'matches'),
+      (snap) => {
+        const list: Match[] = snap.docs.map((d) => ({ id: d.id, ...(d.data() as any) }));
+        list.sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time));
+        setMatches(list);
+      },
+      (err) => {
+        console.error('useMatches error:', err);
+        setMatches([]);
+      }
+    );
   }, []);
   return matches;
 }
