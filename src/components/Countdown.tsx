@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { Match, Team } from '../lib/types';
-import TeamCrest from './TeamCrest';
 
 function parseMatchDate(m: Match): number {
   const [y, mo, d] = m.date.split('-').map(Number);
@@ -58,20 +57,18 @@ export default function Countdown({ match, home, away, live }: Props) {
                 <span className="absolute inline-flex w-full h-full rounded-full bg-brand-red animate-livePulse" />
                 <span className="relative inline-flex w-2 h-2 rounded-full bg-brand-red" />
               </span>
-              <span className="text-brand-red">Uživo</span>
+              <span className="text-brand-red">Uzivo</span>
             </>
           ) : (
-            <>Slijedeća utakmica</>
+            <>Sljedeca utakmica</>
           )}
         </div>
         <div className="flex items-center justify-center gap-3">
-          <div className="flex-1 flex items-center justify-end gap-2 min-w-0">
+          <div className="flex-1 flex items-center justify-end min-w-0">
             <div className="font-display text-3xl truncate" style={{ color: homeColor }}>{home?.code ?? '?'}</div>
-            <TeamCrest team={home} size={36} />
           </div>
           <div className="font-display text-xl text-black/30 shrink-0">vs</div>
-          <div className="flex-1 flex items-center justify-start gap-2 min-w-0">
-            <TeamCrest team={away} size={36} />
+          <div className="flex-1 flex items-center justify-start min-w-0">
             <div className="font-display text-3xl truncate" style={{ color: awayColor }}>{away?.code ?? '?'}</div>
           </div>
         </div>
@@ -87,7 +84,7 @@ export default function Countdown({ match, home, away, live }: Props) {
 
         {!live && diff <= 0 && (
           <div className="mt-3 font-cond text-xs uppercase tracking-widest text-brand-red">
-            Uskoro počinje
+            Uskoro pocinje
           </div>
         )}
       </div>

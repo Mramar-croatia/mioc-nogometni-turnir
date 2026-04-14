@@ -1,32 +1,37 @@
+import siteLogo from '../../logo.jpeg';
 import { NavLink, Outlet } from 'react-router-dom';
 import { classNames } from '../lib/utils';
 
 const NAV = [
   { to: '/', label: 'Pregled', icon: HomeIcon, end: true },
-  { to: '/utakmice', label: 'Utakmice', icon: BallIcon },
+  { to: '/utakmice', label: 'Raspored', icon: BallIcon },
   { to: '/ekipe', label: 'Ekipe', icon: TeamIcon },
-  { to: '/ladder', label: 'Ladder', icon: TrophyIcon },
+  { to: '/ladder', label: 'Zavrsnica', icon: TrophyIcon },
   { to: '/strijelci', label: 'Strijelci', icon: StarIcon },
 ];
 
 export default function Layout() {
   return (
     <div className="min-h-screen flex flex-col">
-      <header className="sticky top-0 z-30 backdrop-blur bg-white/80 border-b border-black/5">
-        <div className="max-w-3xl mx-auto px-4 py-3 flex items-center gap-4">
-          <NavLink to="/" className="flex items-center gap-2 shrink-0">
-            <div className="w-8 h-8 rounded-full bg-brand-blue grid place-items-center">
-              <div className="w-3 h-3 rounded-full bg-brand-red" />
+      <header className="sticky top-0 z-30 border-b border-black/8 bg-white/90 backdrop-blur">
+        <div className="max-w-5xl mx-auto px-4 py-4 flex items-end justify-between gap-4">
+          <NavLink to="/" className="block shrink-0">
+            <div className="font-cond text-[11px] font-bold tracking-[0.24em] uppercase text-black/45">
+              MIOC nogometni turnir
             </div>
-            <div className="leading-none">
-              <div className="font-display text-lg tracking-wider">MIOC TURNIR</div>
-              <div className="font-cond text-[10px] tracking-widest text-black/40 uppercase">
-                XV. gimnazija · 2026
-              </div>
+            <div className="font-display text-4xl leading-none tracking-[0.06em] text-brand-dark">
+              2026
             </div>
           </NavLink>
+          <NavLink to="/" className="shrink-0">
+            <img
+              src={siteLogo}
+              alt="MIOC Turnir logo"
+              className="h-14 w-14 sm:h-16 sm:w-16 object-cover rounded-2xl border border-black/8 shadow-card"
+            />
+          </NavLink>
         </div>
-        <nav className="hidden sm:flex max-w-3xl mx-auto px-2 pb-2 gap-1 overflow-x-auto">
+        <nav className="hidden sm:flex max-w-5xl mx-auto px-4 pb-3 gap-2 overflow-x-auto">
           {NAV.map((n) => (
             <NavLink
               key={n.to}
@@ -34,8 +39,10 @@ export default function Layout() {
               end={n.end}
               className={({ isActive }) =>
                 classNames(
-                  'px-3 py-1.5 rounded-full font-cond font-bold text-sm tracking-wider uppercase whitespace-nowrap transition',
-                  isActive ? 'bg-brand-dark text-white' : 'text-black/60 hover:bg-black/5'
+                  'px-4 py-2 rounded-xl font-cond font-bold text-sm tracking-[0.16em] uppercase whitespace-nowrap transition border',
+                  isActive
+                    ? 'bg-brand-dark border-brand-dark text-white'
+                    : 'border-black/8 bg-white text-black/60 hover:border-black/15 hover:text-brand-dark'
                 )
               }
             >
@@ -45,17 +52,19 @@ export default function Layout() {
         </nav>
       </header>
 
-      <main className="flex-1 max-w-3xl w-full mx-auto px-4 py-6 pb-24 sm:pb-6">
+      <main className="flex-1 max-w-5xl w-full mx-auto px-4 py-8 pb-24 sm:pb-10">
         <Outlet />
       </main>
 
-      <footer className="max-w-3xl mx-auto w-full px-4 py-6 pb-24 sm:pb-6 text-center text-xs text-black/30 font-cond tracking-widest uppercase">
-        Vijeće učenika · XV. gimnazija
+      <footer className="max-w-5xl mx-auto w-full px-4 py-8 pb-24 sm:pb-8 text-sm text-black/35">
+        <div className="border-t border-black/8 pt-4 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+          <span>XV. gimnazija Zagreb</span>
+          <span className="font-cond uppercase tracking-[0.16em]">Vijece ucenika</span>
+        </div>
       </footer>
 
-      {/* Mobile bottom tab bar */}
-      <nav className="sm:hidden fixed bottom-0 inset-x-0 z-40 bg-white/90 backdrop-blur border-t border-black/5 pb-[env(safe-area-inset-bottom)]">
-        <div className="max-w-3xl mx-auto flex items-stretch">
+      <nav className="sm:hidden fixed bottom-0 inset-x-0 z-40 bg-white/96 backdrop-blur border-t border-black/8 pb-[env(safe-area-inset-bottom)]">
+        <div className="max-w-5xl mx-auto flex items-stretch">
           {NAV.map((n) => {
             const Icon = n.icon;
             return (
@@ -65,8 +74,8 @@ export default function Layout() {
                 end={n.end}
                 className={({ isActive }) =>
                   classNames(
-                    'flex-1 flex flex-col items-center justify-center gap-0.5 py-2 text-[10px] font-cond font-bold tracking-widest uppercase transition',
-                    isActive ? 'text-brand-blue' : 'text-black/45'
+                    'flex-1 flex flex-col items-center justify-center gap-1 py-2 text-[10px] font-cond font-bold tracking-[0.14em] uppercase transition',
+                    isActive ? 'text-brand-dark' : 'text-black/45'
                   )
                 }
               >
@@ -88,6 +97,7 @@ function HomeIcon() {
     </svg>
   );
 }
+
 function BallIcon() {
   return (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -96,6 +106,7 @@ function BallIcon() {
     </svg>
   );
 }
+
 function TeamIcon() {
   return (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -105,6 +116,7 @@ function TeamIcon() {
     </svg>
   );
 }
+
 function TrophyIcon() {
   return (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -114,6 +126,7 @@ function TrophyIcon() {
     </svg>
   );
 }
+
 function StarIcon() {
   return (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

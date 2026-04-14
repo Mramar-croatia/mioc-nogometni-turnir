@@ -2,10 +2,9 @@ import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAllGoals, useMatches, useTeams } from '../lib/hooks';
 import Loading from '../components/Loading';
-import { classNames } from '../lib/utils';
-import type { Division } from '../lib/types';
+import { classNames, getDivisionKey, normalizePersonName } from '../lib/utils';
 
-type DivFilter = 'all' | Division;
+type DivFilter = 'all' | 'm' | 'z';
 
 interface Row {
   player: string;
@@ -25,18 +24,22 @@ export default function TopScorers() {
   const rows = useMemo<Row[]>(() => {
     if (!goals || !teams || !matches) return [];
     const teamMap = new Map(teams.map((t) => [t.id, t]));
+    const searchTerm = normalizePersonName(search);
 
-    // count goals per (teamId|player) and per match
-    const byKey = new Map<string, Map<string, number>>();
+    const byKey = new Map<string, { player: string; perMatch: Map<string, number> }>();
     for (const g of goals) {
       if (!g.playerName) continue;
-      const key = `${g.teamId}|${g.playerName}`;
-      let m = byKey.get(key);
-      if (!m) { m = new Map(); byKey.set(key, m); }
-      m.set(g.matchId, (m.get(g.matchId) ?? 0) + 1);
+      const player = g.playerName.trim().replace(/\s+/g, ' ');
+      const key = `${g.teamId}|${normalizePersonName(player)}`;
+      let entry = byKey.get(key);
+      if (!entry) {
+        entry = { player, perMatch: new Map() };
+        byKey.set(key, entry);
+      }
+      if (player.length > entry.player.length) entry.player = player;
+      entry.perMatch.set(g.matchId, (entry.perMatch.get(g.matchId) ?? 0) + 1);
     }
 
-    // matches played per team (finished only)
     const mpPerTeam = new Map<string, number>();
     matches.filter((m) => m.status === 'finished').forEach((m) => {
       mpPerTeam.set(m.homeId, (mpPerTeam.get(m.homeId) ?? 0) + 1);
@@ -44,12 +47,13 @@ export default function TopScorers() {
     });
 
     const out: Row[] = [];
-    for (const [key, perMatch] of byKey) {
-      const [teamId, player] = key.split('|');
+    for (const [key, entry] of byKey) {
+      const [teamId] = key.split('|');
+      const player = entry.player;
       const team = teamMap.get(teamId);
-      if (division !== 'all' && team?.division !== division) continue;
-      if (search && !player.toLowerCase().includes(search.toLowerCase())) continue;
-      const perMatchCounts = Array.from(perMatch.values());
+      if (division !== 'all' && getDivisionKey(team?.division) !== division) continue;
+      if (searchTerm && !normalizePersonName(player).includes(searchTerm)) continue;
+      const perMatchCounts = Array.from(entry.perMatch.values());
       const total = perMatchCounts.reduce((a, b) => a + b, 0);
       out.push({
         player,
@@ -65,25 +69,29 @@ export default function TopScorers() {
   if (goals === null || teams === null || matches === null) return <Loading />;
 
   const teamMap = new Map(teams.map((t) => [t.id, t]));
-  const hasZenske = teams.some((t) => t.division === 'Ženski');
+  const hasZenske = teams.some((t) => getDivisionKey(t.division) === 'z');
 
   return (
-    <div>
-      <h1 className="font-display text-4xl mb-4 tracking-wide">Strijelci</h1>
+    <div className="space-y-6">
+      <header>
+        <div className="font-cond text-xs font-bold uppercase tracking-[0.18em] text-black/45">Statistika</div>
+        <h1 className="font-display text-5xl leading-none tracking-[0.04em] mt-2">Strijelci</h1>
+        <p className="text-black/55 mt-3">Pregled svih strijelaca turnira.</p>
+      </header>
 
       {hasZenske && (
-        <div className="flex gap-2 mb-3">
+        <div className="flex flex-wrap gap-2">
           {([
             ['all', 'Svi'],
-            ['Muški', 'Muški'],
-            ['Ženski', 'Ženski'],
+            ['m', 'Muski'],
+            ['z', 'Zenski'],
           ] as [DivFilter, string][]).map(([k, label]) => (
             <button
               key={k}
               onClick={() => setDivision(k)}
               className={classNames(
                 'pill transition',
-                division === k ? 'bg-brand-dark text-white' : 'bg-black/5 text-black/55 hover:bg-black/10'
+                division === k ? 'border-brand-dark bg-brand-dark text-white' : 'text-black/55 hover:border-black/15'
               )}
             >
               {label}
@@ -95,12 +103,12 @@ export default function TopScorers() {
       <input
         value={search}
         onChange={(e) => setSearch(e.target.value)}
-        placeholder="Pretraži strijelca..."
-        className="input mb-5"
+        placeholder="Pretrazi strijelca..."
+        className="input"
       />
 
       {rows.length === 0 && (
-        <div className="card p-6 text-center text-black/50">Još nema golova.</div>
+        <div className="card p-8 text-center text-black/50">Jos nema golova.</div>
       )}
 
       <div className="card divide-y divide-black/5">
@@ -112,11 +120,11 @@ export default function TopScorers() {
             <Link
               key={`${r.teamId}|${r.player}`}
               to={team ? `/ekipe/${r.teamId}` : '#'}
-              className="flex items-center gap-3 px-4 py-3 hover:bg-black/[0.02] transition"
+              className="flex items-center gap-4 px-4 py-3 hover:bg-black/[0.02] transition"
             >
               <div className={classNames(
-                'font-display text-2xl w-7 text-center',
-                i === 0 ? 'text-brand-blue' : i === 1 || i === 2 ? 'text-brand-red' : 'text-black/30'
+                'font-display text-2xl w-8 text-center',
+                i === 0 || i === 2 ? 'text-brand-blue' : i === 1 ? 'text-brand-red' : 'text-black/30'
               )}>
                 {i + 1}
               </div>
@@ -124,16 +132,16 @@ export default function TopScorers() {
                 <div className="font-bold flex items-center gap-2">
                   <span className="truncate">{r.player}</span>
                   {hat && (
-                    <span className="pill bg-brand-blue/10 text-brand-blue shrink-0" title="Hat-trick">
+                    <span className="pill border-brand-blue/10 bg-brand-blue/10 text-brand-blue shrink-0" title="Hat-trick">
                       Hat-trick
                     </span>
                   )}
                 </div>
-                <div className="text-xs text-black/40 font-cond tracking-wider uppercase">
-                  {team?.code ?? r.teamId} · {r.matchesPlayed} ut. · {perGame} / ut.
+                <div className="text-xs text-black/40 font-cond tracking-[0.16em] uppercase">
+                  {team?.code ?? r.teamId} / {r.matchesPlayed} ut. / {perGame} po utakmici
                 </div>
               </div>
-              <div className="font-display text-2xl text-brand-blue">{r.goals}</div>
+              <div className="font-display text-3xl text-brand-blue">{r.goals}</div>
             </Link>
           );
         })}

@@ -1,7 +1,6 @@
 import { Link } from 'react-router-dom';
 import type { Match, Team, Goal } from '../lib/types';
 import GoalTimeline from './GoalTimeline';
-import TeamCrest from './TeamCrest';
 import { classNames, shortDateHr, dayLabelShort } from '../lib/utils';
 
 interface Props {
@@ -29,7 +28,7 @@ export default function MatchCard({ match, home, away, goals = [], index = 0, co
   const awayColor = away?.color || RED;
 
   const statusLabel =
-    live ? 'UŽIVO'
+    live ? 'UZIVO'
       : finished ? (hasPen ? 'PENALI' : 'KRAJ')
       : `${dayLabelShort(match.date)} ${shortDateHr(match.date)}`;
 
@@ -56,10 +55,10 @@ export default function MatchCard({ match, home, away, goals = [], index = 0, co
           <span
             className={classNames(
               'pill inline-flex items-center gap-1.5',
-              live && 'bg-brand-red/10 text-brand-red',
-              finished && hasPen && 'bg-brand-red/10 text-brand-red',
-              finished && !hasPen && 'bg-black/5 text-black/45',
-              !finished && !live && 'bg-black/5 text-black/40'
+              live && 'border-brand-red/10 bg-brand-red/10 text-brand-red',
+              finished && hasPen && 'border-brand-red/10 bg-brand-red/10 text-brand-red',
+              finished && !hasPen && 'text-black/45',
+              !finished && !live && 'text-black/40'
             )}
           >
             {live && (
@@ -73,7 +72,7 @@ export default function MatchCard({ match, home, away, goals = [], index = 0, co
         </div>
 
         <div className="flex items-center justify-center mb-1">
-          <div className="flex-1 flex items-center justify-end gap-2 pr-3.5 min-w-0">
+          <div className="flex-1 flex items-center justify-end pr-3.5 min-w-0">
             <div
               className="font-display text-[42px] leading-none tracking-wide transition-colors truncate"
               style={{
@@ -82,7 +81,6 @@ export default function MatchCard({ match, home, away, goals = [], index = 0, co
             >
               {homeCode}
             </div>
-            <TeamCrest team={home} size={28} />
           </div>
           <div className="flex items-center gap-0.5 bg-brand-dark rounded-2xl px-3.5 py-2 shrink-0">
             <span
@@ -105,8 +103,7 @@ export default function MatchCard({ match, home, away, goals = [], index = 0, co
               {finished || live ? match.awayScore : '—'}
             </span>
           </div>
-          <div className="flex-1 flex items-center justify-start gap-2 pl-3.5 min-w-0">
-            <TeamCrest team={away} size={28} />
+          <div className="flex-1 flex items-center justify-start pl-3.5 min-w-0">
             <div
               className="font-display text-[42px] leading-none tracking-wide transition-colors truncate"
               style={{
@@ -180,7 +177,7 @@ export default function MatchCard({ match, home, away, goals = [], index = 0, co
               className="font-cond text-sm font-bold tracking-wider uppercase"
               style={{ color: winnerHome ? homeColor : awayColor }}
             >
-              Pobjednik — {winnerHome ? homeCode : awayCode}
+              Pobjednik - {winnerHome ? homeCode : awayCode}
               {hasPen ? ' (penali)' : ''}
             </span>
           </div>

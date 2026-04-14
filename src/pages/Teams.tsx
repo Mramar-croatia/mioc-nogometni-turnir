@@ -2,10 +2,9 @@ import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useMatches, useTeams } from '../lib/hooks';
 import { useFollowedTeams } from '../lib/favorites';
-import { buildIcs, downloadIcs } from '../lib/ics';
+import { buildResultsCsv, downloadCsv } from '../lib/resultsExport';
 import { SkeletonTeamGrid } from '../components/Skeleton';
-import TeamCrest from '../components/TeamCrest';
-import { classNames } from '../lib/utils';
+import { classNames, getDivisionKey, getDivisionLabel } from '../lib/utils';
 import type { Team } from '../lib/types';
 
 export default function Teams() {
@@ -28,49 +27,53 @@ export default function Teams() {
 
   if (teams === null) {
     return (
-      <div>
-        <h1 className="font-display text-4xl mb-5 tracking-wide">Ekipe</h1>
+      <div className="space-y-6">
+        <div>
+          <div className="font-cond text-xs font-bold uppercase tracking-[0.18em] text-black/45">Sudionici</div>
+          <h1 className="font-display text-5xl leading-none tracking-[0.04em] mt-2">Ekipe</h1>
+        </div>
         <SkeletonTeamGrid count={9} />
       </div>
     );
   }
 
-  const muski = filteredTeams.filter((t) => t.division === 'Muški');
-  const zenske = filteredTeams.filter((t) => t.division === 'Ženski');
+  const muski = filteredTeams.filter((t) => getDivisionKey(t.division) === 'm');
+  const zenske = filteredTeams.filter((t) => getDivisionKey(t.division) === 'z');
+  const finishedMatches = matches?.filter((match) => match.status === 'finished') ?? [];
 
-  function exportAll() {
-    if (!matches || !teams) return;
+  function exportResults() {
+    if (!teams || finishedMatches.length === 0) return;
     const map = new Map(teams.map((t) => [t.id, t]));
-    downloadIcs(
-      'mioc-turnir-raspored.ics',
-      buildIcs(matches, map, 'MIOC Turnir — raspored')
-    );
+    downloadCsv('mioc-turnir-rezultati.csv', buildResultsCsv(finishedMatches, map));
   }
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
-        <h1 className="font-display text-4xl tracking-wide">Ekipe</h1>
-        {matches && matches.length > 0 && (
-          <button onClick={exportAll} className="btn-ghost" title="Cijeli raspored u kalendar">
-            + Kalendar
+    <div className="space-y-6">
+      <header className="grid gap-4 lg:grid-cols-[1.2fr_1fr] lg:items-end">
+        <div>
+          <div className="font-cond text-xs font-bold uppercase tracking-[0.18em] text-black/45">Sudionici</div>
+          <h1 className="font-display text-5xl leading-none tracking-[0.04em] mt-2">Ekipe</h1>
+        </div>
+        {finishedMatches.length > 0 && (
+          <button onClick={exportResults} className="btn-ghost justify-self-start lg:justify-self-end" title="Izvezi rezultate">
+            Izvezi rezultate
           </button>
         )}
-      </div>
+      </header>
 
       <input
         value={search}
         onChange={(e) => setSearch(e.target.value)}
-        placeholder="Pretraži ekipu, kapetana ili igrača..."
-        className="input mb-5"
+        placeholder="Pretrazi ekipu, kapetana ili igraca..."
+        className="input"
       />
 
       {filteredTeams.length === 0 && (
-        <div className="text-black/40 text-center py-10">Ništa nije pronađeno.</div>
+        <div className="card p-8 text-black/45 text-center">Nista nije pronadeno.</div>
       )}
 
-      <Group title="Muški" teams={muski} isFollowed={isFollowed} toggle={toggle} />
-      {zenske.length > 0 && <Group title="Ženski" teams={zenske} isFollowed={isFollowed} toggle={toggle} />}
+      <Group title="Muski" teams={muski} isFollowed={isFollowed} toggle={toggle} />
+      {zenske.length > 0 && <Group title="Zenski" teams={zenske} isFollowed={isFollowed} toggle={toggle} />}
     </div>
   );
 }
@@ -82,57 +85,53 @@ function Group({ title, teams, isFollowed, toggle }: {
   toggle: (id: string) => void;
 }) {
   if (teams.length === 0) return null;
-  // Followed first, then alphabetical.
   const sorted = [...teams].sort((a, b) => {
     const fa = isFollowed(a.id) ? 0 : 1;
     const fb = isFollowed(b.id) ? 0 : 1;
     return fa - fb || a.code.localeCompare(b.code, 'hr');
   });
   return (
-    <div className="mb-7">
-      <h2 className="font-cond font-extrabold text-xs tracking-widest uppercase text-black/45 mb-3">{title}</h2>
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+    <section className="space-y-3">
+      <h2 className="font-cond font-extrabold text-xs tracking-[0.18em] uppercase text-black/45">{title}</h2>
+      <div className="space-y-3">
         {sorted.map((t) => {
           const followed = isFollowed(t.id);
           return (
-            <div
+            <Link
               key={t.id}
-              className="card relative hover:scale-[1.02] transition overflow-hidden"
-              style={t.color ? { boxShadow: `0 2px 8px ${t.color}15, 0 8px 32px ${t.color}15` } : undefined}
+              to={`/ekipe/${t.id}`}
+              className="card flex items-center gap-4 px-4 py-4 transition hover:border-black/15"
             >
-              {t.color && (
-                <div className="h-1" style={{ background: t.color }} />
-              )}
+              <div className="w-20 shrink-0">
+                <div className="font-display text-4xl leading-none truncate" style={t.color ? { color: t.color } : undefined}>
+                  {t.code}
+                </div>
+                <div className="font-cond text-[10px] uppercase tracking-[0.16em] text-black/35 mt-1">
+                  {getDivisionLabel(t.division)}
+                </div>
+              </div>
+              <div className="min-w-0 flex-1">
+                {t.displayName && t.displayName !== t.code && (
+                  <div className="font-semibold truncate">{t.displayName}</div>
+                )}
+                <div className="text-sm text-black/60 truncate">Kapetan: {t.captain || 'nije unesen'}</div>
+                <div className="text-xs text-black/40 mt-1">{t.playersCount} igraca</div>
+              </div>
               <button
                 onClick={(e) => { e.preventDefault(); toggle(t.id); }}
                 className={classNames(
-                  'absolute top-2 right-2 w-8 h-8 grid place-items-center rounded-full text-lg transition z-10',
-                  followed ? 'text-brand-blue' : 'text-black/20 hover:text-black/50'
+                  'w-10 h-10 grid place-items-center rounded-full text-xl transition shrink-0',
+                  followed ? 'bg-brand-blue/10 text-brand-blue' : 'text-black/25 hover:bg-black/5 hover:text-black/55'
                 )}
                 aria-label={followed ? 'Prestani pratiti' : 'Prati ekipu'}
-                title={followed ? 'Pratiš' : 'Prati ekipu'}
+                title={followed ? 'Pratis' : 'Prati ekipu'}
               >
                 {followed ? '★' : '☆'}
               </button>
-              <Link to={`/ekipe/${t.id}`} className="block p-4">
-                <div className="flex items-center gap-3 pr-7">
-                  <TeamCrest team={t} size={44} rounded="lg" />
-                  <div
-                    className="font-display text-3xl leading-none min-w-0 truncate"
-                    style={t.color ? { color: t.color } : undefined}
-                  >
-                    {t.code}
-                  </div>
-                </div>
-                <div className="mt-2 text-[11px] font-cond tracking-widest uppercase text-black/40">
-                  {t.playersCount} igrača
-                </div>
-                <div className="text-xs text-black/55 mt-1 truncate">©  {t.captain}</div>
-              </Link>
-            </div>
+            </Link>
           );
         })}
       </div>
-    </div>
+    </section>
   );
 }

@@ -29,22 +29,40 @@ export default function Matches() {
 
   if (matches === null || teams === null) {
     return (
-      <div>
-        <h1 className="font-display text-4xl mb-5 tracking-wide">Utakmice</h1>
+      <div className="space-y-6">
+        <div>
+          <div className="font-cond text-xs font-bold uppercase tracking-[0.18em] text-black/45">Raspored</div>
+          <h1 className="font-display text-5xl leading-none tracking-[0.04em] mt-2">Utakmice</h1>
+        </div>
         <SkeletonList count={5} />
       </div>
     );
   }
+
   const teamMap = new Map(teams.map((t) => [t.id, t]));
+  const liveCount = matches.filter((m) => m.status === 'live').length;
+  const upcomingCount = matches.filter((m) => m.status === 'scheduled').length;
+  const finishedCount = matches.filter((m) => m.status === 'finished').length;
 
   return (
-    <div>
-      <h1 className="font-display text-4xl mb-4 tracking-wide">Utakmice</h1>
+    <div className="space-y-6">
+      <header className="grid gap-4 lg:grid-cols-[1.2fr_1fr] lg:items-end">
+        <div>
+          <div className="font-cond text-xs font-bold uppercase tracking-[0.18em] text-black/45">Raspored</div>
+          <h1 className="font-display text-5xl leading-none tracking-[0.04em] mt-2">Utakmice</h1>
+          <p className="text-black/55 mt-3">Sve utakmice su grupirane po datumu.</p>
+        </div>
+        <div className="card p-5 grid grid-cols-3 gap-3">
+          <MiniStat label="Uzivo" value={liveCount} />
+          <MiniStat label="Sljedece" value={upcomingCount} />
+          <MiniStat label="Gotove" value={finishedCount} />
+        </div>
+      </header>
 
-      <div className="flex gap-2 mb-5">
+      <div className="flex flex-wrap gap-2">
         {([
           ['all', 'Sve'],
-          ['scheduled', 'Predstojeće'],
+          ['scheduled', 'Sljedece'],
           ['finished', 'Odigrane'],
         ] as [Filter, string][]).map(([k, label]) => (
           <button
@@ -52,7 +70,7 @@ export default function Matches() {
             onClick={() => setFilter(k)}
             className={classNames(
               'pill transition',
-              filter === k ? 'bg-brand-dark text-white' : 'bg-black/5 text-black/55 hover:bg-black/10'
+              filter === k ? 'border-brand-dark bg-brand-dark text-white' : 'text-black/55 hover:border-black/15'
             )}
           >
             {label}
@@ -60,18 +78,27 @@ export default function Matches() {
         ))}
       </div>
 
-      {grouped.length === 0 && <div className="text-black/40 text-center py-10">Nema utakmica.</div>}
+      {grouped.length === 0 && <div className="card p-8 text-black/45 text-center">Nema utakmica za odabrani filter.</div>}
 
       {grouped.map(([date, list]) => (
-        <div key={date} className="mb-7">
-          <h2 className="font-cond font-extrabold text-xs tracking-widest uppercase text-black/45 mb-3">
+        <section key={date} className="space-y-3">
+          <h2 className="font-cond font-extrabold text-xs tracking-[0.18em] uppercase text-black/45">
             {formatDateHr(date)}
           </h2>
           {list.map((m, i) => (
             <MatchCard key={m.id} match={m} home={teamMap.get(m.homeId)} away={teamMap.get(m.awayId)} index={i} compact />
           ))}
-        </div>
+        </section>
       ))}
+    </div>
+  );
+}
+
+function MiniStat({ label, value }: { label: string; value: number }) {
+  return (
+    <div>
+      <div className="font-display text-3xl leading-none">{value}</div>
+      <div className="font-cond text-[10px] uppercase tracking-[0.16em] text-black/40 mt-1">{label}</div>
     </div>
   );
 }

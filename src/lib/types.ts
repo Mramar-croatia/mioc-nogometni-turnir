@@ -1,4 +1,4 @@
-export type Division = 'Muški' | 'Ženski';
+export type Division = string;
 export type MatchStatus = 'scheduled' | 'live' | 'finished';
 export type Stage = 'R1' | 'WB' | 'LB' | 'F' | 'GF';
 export type Half = 'I' | 'II';
@@ -63,19 +63,4 @@ export interface Match {
   commentary?: string;
   mvpName?: string;
   mvpTeamId?: string;
-}
-
-export interface BracketSlot {
-  id: string;
-  label: string;
-  matchId?: string | null;
-  teamId?: string | null;
-  source?: { type: 'winner' | 'loser'; matchId: string }[];
-}
-
-export interface BracketStage2 {
-  winnersBracket: BracketSlot[];
-  losersBracket: BracketSlot[];
-  final: BracketSlot;
-  grandFinal: BracketSlot;
 }

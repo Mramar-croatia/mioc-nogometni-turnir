@@ -5,7 +5,7 @@ import { useFollowedTeams } from '../lib/favorites';
 import MatchCard from '../components/MatchCard';
 import Countdown from '../components/Countdown';
 import { SkeletonList, SkeletonMatchCard } from '../components/Skeleton';
-import { formatDateHr, todayIso } from '../lib/utils';
+import { tallyNames, todayIso } from '../lib/utils';
 
 export default function Home() {
   const matches = useMatches();
@@ -17,40 +17,27 @@ export default function Home() {
     if (!matches) return null;
     const finished = matches.filter((m) => m.status === 'finished');
     const goalsCount = allGoals?.length ?? null;
-    let topScorer: { name: string; goals: number } | null = null;
-    if (allGoals) {
-      const map = new Map<string, number>();
-      for (const g of allGoals) {
-        if (!g.playerName) continue;
-        map.set(g.playerName, (map.get(g.playerName) ?? 0) + 1);
-      }
-      for (const [name, n] of map) {
-        if (!topScorer || n > topScorer.goals) topScorer = { name, goals: n };
-      }
-    }
     return {
       total: matches.length,
       played: finished.length,
-      remaining: matches.length - finished.length,
       goalsCount,
-      topScorer,
     };
   }, [matches, allGoals]);
 
   if (matches === null || teams === null) {
     return (
-      <div>
-        <div className="text-center mb-7">
-          <div className="pill bg-brand-blue/10 text-brand-blue mb-3">Školski turnir</div>
-          <h1 className="font-display text-5xl tracking-wide leading-none">Nogometni turnir</h1>
-        </div>
+      <div className="space-y-6">
+        <header className="space-y-3">
+          <div className="font-cond text-xs font-bold uppercase tracking-[0.18em] text-black/45">Pregled turnira</div>
+          <h1 className="font-display text-6xl leading-none tracking-[0.04em]">MIOC turnir</h1>
+        </header>
         <SkeletonMatchCard />
         <SkeletonList count={3} />
       </div>
     );
   }
 
-  const teamMap = new Map((teams ?? []).map((t) => [t.id, t]));
+  const teamMap = new Map(teams.map((t) => [t.id, t]));
   const today = todayIso();
 
   const live = matches.filter((m) => m.status === 'live');
@@ -60,29 +47,23 @@ export default function Home() {
     .slice(0, 4);
 
   const heroMatch = live[0] ?? upcoming[0] ?? null;
-  const heroLive = !!live[0];
-  const recent = matches
-    .filter((m) => m.status === 'finished')
-    .slice(-3)
-    .reverse();
-
-  const followed = matches.filter(
-    (m) => (followedIds.has(m.homeId) || followedIds.has(m.awayId)) && m.status !== 'finished'
-  ).slice(0, 3);
+  const recent = matches.filter((m) => m.status === 'finished').slice(-3).reverse();
+  const followed = matches
+    .filter((m) => (followedIds.has(m.homeId) || followedIds.has(m.awayId)) && m.status !== 'finished')
+    .slice(0, 3);
 
   const empty = matches.length === 0;
 
   return (
-    <div>
-      <div className="text-center mb-7">
-        <div className="pill bg-brand-blue/10 text-brand-blue mb-3">Školski turnir</div>
-        <h1 className="font-display text-5xl tracking-wide leading-none">Nogometni turnir</h1>
-        <p className="font-semibold text-black/30 mt-2">{formatDateHr(today)}</p>
-      </div>
+    <div className="space-y-8">
+      <header>
+        <div className="font-cond text-xs font-bold uppercase tracking-[0.18em] text-black/45">Pregled turnira</div>
+        <h1 className="font-display text-6xl leading-none tracking-[0.04em] mt-2">MIOC turnir</h1>
+      </header>
 
       {empty && (
         <div className="card p-6 text-center">
-          <p className="text-black/50">Raspored utakmica još nije objavljen.</p>
+          <p className="text-black/50">Raspored utakmica jos nije objavljen.</p>
         </div>
       )}
 
@@ -91,26 +72,21 @@ export default function Home() {
           match={heroMatch}
           home={teamMap.get(heroMatch.homeId)}
           away={teamMap.get(heroMatch.awayId)}
-          live={heroLive}
+          live={heroMatch.status === 'live'}
         />
       )}
 
       {!empty && stats && (
-        <div className="card p-4 mb-7">
-          <div className="grid grid-cols-3 gap-3">
+        <div className="card p-5">
+          <div className="grid gap-4 sm:grid-cols-2">
             <Stat label="Odigrano" value={`${stats.played} / ${stats.total}`} />
             <Stat label="Golova" value={stats.goalsCount ?? '—'} />
-            <Stat
-              label="Vodeći strijelac"
-              value={stats.topScorer ? `${stats.topScorer.name.split(' ')[0]} · ${stats.topScorer.goals}` : '—'}
-              small
-            />
           </div>
         </div>
       )}
 
       {live.length > 1 && (
-        <Section title="Uživo">
+        <Section title="Uzivo">
           {live.slice(1).map((m, i) => (
             <MatchCard key={m.id} match={m} home={teamMap.get(m.homeId)} away={teamMap.get(m.awayId)} index={i} />
           ))}
@@ -118,7 +94,7 @@ export default function Home() {
       )}
 
       {followed.length > 0 && (
-        <Section title="★ Ekipe koje pratiš">
+        <Section title="Ekipe koje pratis">
           {followed.map((m, i) => (
             <MatchCard key={m.id} match={m} home={teamMap.get(m.homeId)} away={teamMap.get(m.awayId)} index={i} compact />
           ))}
@@ -142,7 +118,7 @@ export default function Home() {
       )}
 
       {upcoming.length > 0 && (
-        <Section title="Slijedeće utakmice" link={{ to: '/utakmice', label: 'Raspored' }}>
+        <Section title="Sljedece utakmice" link={{ to: '/utakmice', label: 'Raspored' }}>
           {upcoming.map((m, i) => (
             <MatchCard key={m.id} match={m} home={teamMap.get(m.homeId)} away={teamMap.get(m.awayId)} index={i} compact />
           ))}
@@ -152,21 +128,21 @@ export default function Home() {
   );
 }
 
-function Stat({ label, value, small }: { label: string; value: string | number; small?: boolean }) {
+function Stat({ label, value }: { label: string; value: string | number }) {
   return (
-    <div className="text-center min-w-0">
-      <div className={small ? 'font-cond font-bold text-base truncate' : 'font-display text-2xl leading-none'}>{value}</div>
-      <div className="font-cond text-[10px] uppercase tracking-widest text-black/40 mt-1">{label}</div>
+    <div className="rounded-xl border border-black/6 bg-black/[0.02] px-4 py-4 min-w-0 text-center">
+      <div className="font-display text-3xl leading-none">{value}</div>
+      <div className="font-cond text-[10px] uppercase tracking-[0.16em] text-black/40 mt-2">{label}</div>
     </div>
   );
 }
 
 function Section({ title, link, children }: { title: string; link?: { to: string; label: string }; children: React.ReactNode }) {
   return (
-    <section className="mb-7">
-      <div className="flex items-center justify-between mb-3">
-        <h2 className="font-cond font-extrabold text-xs tracking-widest uppercase text-black/50">{title}</h2>
-        {link && <Link to={link.to} className="font-cond font-bold text-xs tracking-wider uppercase text-brand-blue">{link.label} →</Link>}
+    <section className="space-y-4">
+      <div className="flex items-center justify-between gap-3">
+        <h2 className="font-cond font-extrabold text-xs tracking-[0.18em] uppercase text-black/50">{title}</h2>
+        {link && <Link to={link.to} className="font-cond font-bold text-xs tracking-[0.16em] uppercase text-brand-blue">{link.label}</Link>}
       </div>
       {children}
     </section>

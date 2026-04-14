@@ -94,7 +94,7 @@ Aplikacija ne dopušta otvorenu registraciju. Prvi admin se kreira ručno:
 U adminu (`/#/admin`):
 - **Ekipe** → **+ Nova** za svaku ekipu (kapetan, igrači, divizija).
 - **Utakmice** → **+ Nova** za svaku utakmicu I. kola (datum, vrijeme, ekipe).
-- **Ladder** → koristi se za dodavanje utakmica II. faze (double elimination) kasnije.
+- **Ladder** → koristi se za dodavanje utakmica II. faze (double elimination) kasnije. Prikaz se sada generira direktno iz tih utakmica, bez posebne `brackets` kolekcije.
 
 ### 8) Dodaj ostale organizatore
 
@@ -129,7 +129,7 @@ Reci im da promijene lozinku nakon prve prijave (Firebase to traži kroz Auth).
 
 - **Otvori utakmicu u adminu** → unesi rezultat → klikni status **Završeno** → odaberi **Pobjednika** → **Spremi**.
 - **Dodaj gol** → odaberi ekipu → unesi ime, minutu, poluvrijeme → **Dodaj gol**. Timeline na javnoj stranici se odmah ažurira.
-- **II. faza:** kad I. kolo završi, idi na **Ladder** u adminu → dodaj utakmice double-elimination ladera ručno (Pobjednička / Poražena / Finale / Veliko finale).
+- **II. faza:** kad I. kolo završi, idi na **Ladder** u adminu → dodaj utakmice double-elimination ladera ručno (Pobjednička / Poražena / Finale / Veliko finale) i po potrebi im upiši oznaku kruga (`WB-SF1`, `LB-R2`, ...).
 
 ## Struktura
 
@@ -139,8 +139,8 @@ src/
 ├── lib/             firebase.ts, types.ts, utils.ts, hooks.ts
 └── pages/
     ├── Home, Matches, MatchDetail, Teams, TeamDetail, Bracket, TopScorers
-    └── admin/       Login, AdminLayout, Dashboard, MatchEdit, BracketAdmin, Admins, Seed
-public/data.json     izvorni podaci o ekipama i rasporedu
+    └── admin/       Login, AdminLayout, Dashboard, MatchCreate, MatchEdit, BracketAdmin, Admins
+data.json            izvorni podaci o ekipama i rasporedu
 firestore.rules      sigurnosna pravila baze
 .github/workflows/   automatski deploy
 ```

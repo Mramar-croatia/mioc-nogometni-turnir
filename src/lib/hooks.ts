@@ -1,17 +1,21 @@
 import { useEffect, useState } from 'react';
 import {
-  collection, doc, onSnapshot, orderBy, query, getDoc, getDocs, collectionGroup,
+  collection, doc, onSnapshot, orderBy, query, getDoc, collectionGroup,
 } from 'firebase/firestore';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { auth, db } from './firebase';
-import type { Team, Match, Goal, Card, BracketStage2 } from './types';
+import type { Team, Match, Goal, Card } from './types';
+
+function withId<T>(id: string, data: unknown): T {
+  return { id, ...(data as object) } as T;
+}
 
 export function useTeams() {
   const [teams, setTeams] = useState<Team[] | null>(null);
   useEffect(() => {
     const q = query(collection(db, 'teams'));
     return onSnapshot(q, (snap) => {
-      const list: Team[] = snap.docs.map((d) => ({ id: d.id, ...(d.data() as any) }));
+      const list: Team[] = snap.docs.map((d) => withId<Team>(d.id, d.data()));
       list.sort((a, b) => a.code.localeCompare(b.code, 'hr'));
       setTeams(list);
     }, () => setTeams([]));
@@ -22,9 +26,12 @@ export function useTeams() {
 export function useTeam(id: string | undefined) {
   const [team, setTeam] = useState<Team | null | undefined>(undefined);
   useEffect(() => {
-    if (!id) return;
+    if (!id) {
+      setTeam(undefined);
+      return;
+    }
     return onSnapshot(doc(db, 'teams', id), (d) => {
-      setTeam(d.exists() ? ({ id: d.id, ...(d.data() as any) }) : null);
+      setTeam(d.exists() ? withId<Team>(d.id, d.data()) : null);
     });
   }, [id]);
   return team;
@@ -36,7 +43,7 @@ export function useMatches() {
     return onSnapshot(
       collection(db, 'matches'),
       (snap) => {
-        const list: Match[] = snap.docs.map((d) => ({ id: d.id, ...(d.data() as any) }));
+        const list: Match[] = snap.docs.map((d) => withId<Match>(d.id, d.data()));
         list.sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time));
         setMatches(list);
       },
@@ -52,9 +59,12 @@ export function useMatches() {
 export function useMatch(id: string | undefined) {
   const [match, setMatch] = useState<Match | null | undefined>(undefined);
   useEffect(() => {
-    if (!id) return;
+    if (!id) {
+      setMatch(undefined);
+      return;
+    }
     return onSnapshot(doc(db, 'matches', id), (d) => {
-      setMatch(d.exists() ? ({ id: d.id, ...(d.data() as any) }) : null);
+      setMatch(d.exists() ? withId<Match>(d.id, d.data()) : null);
     });
   }, [id]);
   return match;
@@ -63,10 +73,13 @@ export function useMatch(id: string | undefined) {
 export function useGoals(matchId: string | undefined) {
   const [goals, setGoals] = useState<Goal[]>([]);
   useEffect(() => {
-    if (!matchId) return;
+    if (!matchId) {
+      setGoals([]);
+      return;
+    }
     const q = query(collection(db, 'matches', matchId, 'goals'), orderBy('minute'));
     return onSnapshot(q, (snap) => {
-      setGoals(snap.docs.map((d) => ({ id: d.id, ...(d.data() as any) })));
+      setGoals(snap.docs.map((d) => withId<Goal>(d.id, d.data())));
     });
   }, [matchId]);
   return goals;
@@ -75,58 +88,37 @@ export function useGoals(matchId: string | undefined) {
 export function useCards(matchId: string | undefined) {
   const [cards, setCards] = useState<Card[]>([]);
   useEffect(() => {
-    if (!matchId) return;
+    if (!matchId) {
+      setCards([]);
+      return;
+    }
     const q = query(collection(db, 'matches', matchId, 'cards'), orderBy('minute'));
     return onSnapshot(q, (snap) => {
-      setCards(snap.docs.map((d) => ({ id: d.id, ...(d.data() as any) })));
+      setCards(snap.docs.map((d) => withId<Card>(d.id, d.data())));
     }, () => setCards([]));
   }, [matchId]);
   return cards;
 }
 
-// Aggregates every goal across every match. Tries a collection-group query
-// first (fast, one round-trip); falls back to per-match reads if rules
-// aren't deployed yet.
+// Aggregates every goal across every match in realtime.
 export function useAllGoals(matches: Match[] | null) {
   const [goals, setGoals] = useState<(Goal & { matchId: string })[] | null>(null);
   useEffect(() => {
     if (matches === null) return;
     if (matches.length === 0) { setGoals([]); return; }
-    let cancelled = false;
-    (async () => {
-      try {
-        const snap = await getDocs(collectionGroup(db, 'goals'));
-        if (cancelled) return;
+    return onSnapshot(
+      collectionGroup(db, 'goals'),
+      (snap) => {
         const list = snap.docs.map((d) => ({
-          id: d.id, matchId: d.ref.parent.parent?.id ?? '', ...(d.data() as any),
-        })) as (Goal & { matchId: string })[];
+          ...withId<Goal>(d.id, d.data()),
+          matchId: d.ref.parent.parent?.id ?? '',
+        }));
         setGoals(list);
-      } catch {
-        try {
-          const all = await Promise.all(matches.map((m) =>
-            getDocs(collection(db, 'matches', m.id, 'goals')).then((s) =>
-              s.docs.map((d) => ({ id: d.id, matchId: m.id, ...(d.data() as any) }))
-            )
-          ));
-          if (!cancelled) setGoals(all.flat() as any);
-        } catch {
-          if (!cancelled) setGoals([]);
-        }
-      }
-    })();
-    return () => { cancelled = true; };
+      },
+      () => setGoals([])
+    );
   }, [matches]);
   return goals;
-}
-
-export function useBracketStage2() {
-  const [b, setB] = useState<BracketStage2 | null | undefined>(undefined);
-  useEffect(() => {
-    return onSnapshot(doc(db, 'brackets', 'stage2'), (d) => {
-      setB(d.exists() ? (d.data() as BracketStage2) : null);
-    });
-  }, []);
-  return b;
 }
 
 export function useAuthUser() {
