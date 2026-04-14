@@ -1,9 +1,9 @@
 import { useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
 import { useMatches, useTeams } from '../lib/hooks';
+import MatchRow from '../components/MatchRow';
 import { SkeletonList } from '../components/Skeleton';
 import { classNames } from '../lib/utils';
-import type { Match, Team } from '../lib/types';
+import type { Match } from '../lib/types';
 
 type Filter = 'all' | 'finished' | 'scheduled';
 
@@ -127,57 +127,3 @@ function PageHeader() {
   );
 }
 
-function MatchRow({ match, home, away }: { match: Match; home?: Team; away?: Team }) {
-  const completed = match.status === 'finished';
-  const live = match.status === 'live';
-  const homeWinner = completed && match.winnerId === match.homeId;
-  const awayWinner = completed && match.winnerId === match.awayId;
-
-  return (
-    <Link
-      to={`/utakmice/${match.id}`}
-      className={classNames(
-        'flex items-center rounded-xl px-3.5 py-2.5 mb-[5px] last:mb-0 transition',
-        completed
-          ? 'bg-emerald-50/70 ring-1 ring-inset ring-emerald-100 hover:bg-emerald-50'
-          : live
-          ? 'bg-brand-red/5 ring-1 ring-inset ring-brand-red/15 hover:bg-brand-red/10'
-          : 'hover:bg-black/[0.03]'
-      )}
-    >
-      <div className="font-mono text-[11px] font-semibold text-black/40 w-[42px] shrink-0">
-        {match.time}
-      </div>
-      <div className="flex-1 flex items-center justify-center gap-3">
-        <div
-          className={classNames(
-            'text-[15px] min-w-[52px] text-right',
-            homeWinner ? 'font-extrabold text-emerald-700' : 'font-bold text-black/85'
-          )}
-        >
-          {home?.code ?? '?'}
-        </div>
-        <div
-          className={classNames(
-            'rounded-full px-2.5 py-[3px] text-[10px] font-bold uppercase tracking-[0.06em] shrink-0',
-            completed
-              ? 'bg-emerald-100 text-emerald-700'
-              : live
-              ? 'bg-brand-red text-white'
-              : 'bg-brand-blue/10 text-brand-blue'
-          )}
-        >
-          {completed ? `${match.homeScore}:${match.awayScore}` : live ? 'LIVE' : 'vs'}
-        </div>
-        <div
-          className={classNames(
-            'text-[15px] min-w-[52px] text-left',
-            awayWinner ? 'font-extrabold text-emerald-700' : 'font-bold text-black/85'
-          )}
-        >
-          {away?.code ?? '?'}
-        </div>
-      </div>
-    </Link>
-  );
-}

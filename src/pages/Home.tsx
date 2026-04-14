@@ -3,9 +3,11 @@ import { Link } from 'react-router-dom';
 import { useAllGoals, useMatches, useTeams } from '../lib/hooks';
 import { useFollowedTeams } from '../lib/favorites';
 import MatchCard from '../components/MatchCard';
+import MatchRow from '../components/MatchRow';
 import Countdown from '../components/Countdown';
 import { SkeletonList, SkeletonMatchCard } from '../components/Skeleton';
-import { tallyNames, todayIso } from '../lib/utils';
+import type { Match, Team } from '../lib/types';
+import { todayIso } from '../lib/utils';
 
 export default function Home() {
   const matches = useMatches();
@@ -26,11 +28,8 @@ export default function Home() {
 
   if (matches === null || teams === null) {
     return (
-      <div className="space-y-6">
-        <header className="space-y-3">
-          <div className="font-cond text-xs font-bold uppercase tracking-[0.18em] text-black/45">Pregled turnira</div>
-          <h1 className="font-display text-6xl leading-none tracking-[0.04em]">MIOC turnir</h1>
-        </header>
+      <div className="space-y-8">
+        <PageHeader />
         <SkeletonMatchCard />
         <SkeletonList count={3} />
       </div>
@@ -56,13 +55,10 @@ export default function Home() {
 
   return (
     <div className="space-y-8">
-      <header>
-        <div className="font-cond text-xs font-bold uppercase tracking-[0.18em] text-black/45">Pregled turnira</div>
-        <h1 className="font-display text-6xl leading-none tracking-[0.04em] mt-2">MIOC turnir</h1>
-      </header>
+      <PageHeader />
 
       {empty && (
-        <div className="card p-6 text-center">
+        <div className="card p-8 text-center">
           <p className="text-black/50">Raspored utakmica jos nije objavljen.</p>
         </div>
       )}
@@ -77,16 +73,25 @@ export default function Home() {
       )}
 
       {!empty && stats && (
-        <div className="card p-5">
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Stat label="Odigrano" value={`${stats.played} / ${stats.total}`} />
-            <Stat label="Golova" value={stats.goalsCount ?? '—'} />
+        <div className="card p-5 sm:p-6">
+          <div className="grid grid-cols-2 gap-3 sm:gap-4">
+            <Stat
+              label="Odigrano"
+              value={`${stats.played}`}
+              suffix={` / ${stats.total}`}
+              accent="blue"
+            />
+            <Stat
+              label="Golova"
+              value={stats.goalsCount ?? '—'}
+              accent="red"
+            />
           </div>
         </div>
       )}
 
       {live.length > 1 && (
-        <Section title="Uzivo">
+        <Section title="Uzivo" accent="red">
           {live.slice(1).map((m, i) => (
             <MatchCard key={m.id} match={m} home={teamMap.get(m.homeId)} away={teamMap.get(m.awayId)} index={i} />
           ))}
@@ -95,9 +100,7 @@ export default function Home() {
 
       {followed.length > 0 && (
         <Section title="Ekipe koje pratis">
-          {followed.map((m, i) => (
-            <MatchCard key={m.id} match={m} home={teamMap.get(m.homeId)} away={teamMap.get(m.awayId)} index={i} compact />
-          ))}
+          <CompactList list={followed} teamMap={teamMap} />
         </Section>
       )}
 
@@ -111,40 +114,101 @@ export default function Home() {
 
       {recent.length > 0 && (
         <Section title="Posljednji rezultati" link={{ to: '/utakmice', label: 'Sve' }}>
-          {recent.map((m, i) => (
-            <MatchCard key={m.id} match={m} home={teamMap.get(m.homeId)} away={teamMap.get(m.awayId)} index={i} compact />
-          ))}
+          <CompactList list={recent} teamMap={teamMap} />
         </Section>
       )}
 
       {upcoming.length > 0 && (
         <Section title="Sljedece utakmice" link={{ to: '/utakmice', label: 'Raspored' }}>
-          {upcoming.map((m, i) => (
-            <MatchCard key={m.id} match={m} home={teamMap.get(m.homeId)} away={teamMap.get(m.awayId)} index={i} compact />
-          ))}
+          <CompactList list={upcoming} teamMap={teamMap} />
         </Section>
       )}
     </div>
   );
 }
 
-function Stat({ label, value }: { label: string; value: string | number }) {
+function PageHeader() {
   return (
-    <div className="rounded-xl border border-black/6 bg-black/[0.02] px-4 py-4 min-w-0 text-center">
-      <div className="font-display text-3xl leading-none">{value}</div>
+    <header>
+      <div className="font-cond text-xs font-bold uppercase tracking-[0.18em] text-black/45">
+        Pregled turnira
+      </div>
+      <h1 className="font-display text-6xl leading-none tracking-[0.04em] mt-2">
+        MIOC turnir
+      </h1>
+      <p className="text-black/55 mt-3">Sve bitno na jednom mjestu.</p>
+    </header>
+  );
+}
+
+function Stat({
+  label,
+  value,
+  suffix,
+  accent,
+}: {
+  label: string;
+  value: string | number;
+  suffix?: string;
+  accent: 'blue' | 'red';
+}) {
+  const accentClass = accent === 'blue' ? 'bg-brand-blue' : 'bg-brand-red';
+  return (
+    <div className="relative rounded-xl border border-black/6 bg-black/[0.02] px-4 py-4 min-w-0 text-center overflow-hidden">
+      <span className={`absolute left-0 top-2 bottom-2 w-[3px] rounded-full ${accentClass}`} />
+      <div className="font-display text-3xl leading-none">
+        {value}
+        {suffix && <span className="text-black/30 text-2xl">{suffix}</span>}
+      </div>
       <div className="font-cond text-[10px] uppercase tracking-[0.16em] text-black/40 mt-2">{label}</div>
     </div>
   );
 }
 
-function Section({ title, link, children }: { title: string; link?: { to: string; label: string }; children: React.ReactNode }) {
+function Section({
+  title,
+  link,
+  accent,
+  children,
+}: {
+  title: string;
+  link?: { to: string; label: string };
+  accent?: 'red';
+  children: React.ReactNode;
+}) {
   return (
-    <section className="space-y-4">
+    <section className="space-y-3">
       <div className="flex items-center justify-between gap-3">
-        <h2 className="font-cond font-extrabold text-xs tracking-[0.18em] uppercase text-black/50">{title}</h2>
-        {link && <Link to={link.to} className="font-cond font-bold text-xs tracking-[0.16em] uppercase text-brand-blue">{link.label}</Link>}
+        <div className="flex items-center gap-2.5">
+          <span
+            className={`inline-block w-1 h-4 rounded-full ${
+              accent === 'red' ? 'bg-brand-red' : 'bg-brand-dark'
+            }`}
+          />
+          <h2 className="font-cond font-extrabold text-xs tracking-[0.18em] uppercase text-black/55">
+            {title}
+          </h2>
+        </div>
+        {link && (
+          <Link
+            to={link.to}
+            className="font-cond font-bold text-[11px] tracking-[0.16em] uppercase text-brand-blue hover:text-brand-dark transition"
+          >
+            {link.label} →
+          </Link>
+        )}
       </div>
       {children}
     </section>
+  );
+}
+
+function CompactList({ list, teamMap }: { list: Match[]; teamMap: Map<string, Team> }) {
+  return (
+    <div className="card p-3 sm:p-4">
+      {list.map((m) => (
+        <MatchRow key={m.id} match={m} home={teamMap.get(m.homeId)} away={teamMap.get(m.awayId)} showDate />
+      ))}
+    </div>
   );
 }

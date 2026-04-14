@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useAllGoals, useMatches, useTeams } from '../lib/hooks';
 import Loading from '../components/Loading';
 import { classNames, getDivisionKey, normalizePersonName } from '../lib/utils';
+import type { Team } from '../lib/types';
 
 type DivFilter = 'all' | 'm' | 'z';
 
@@ -13,6 +14,12 @@ interface Row {
   matchesPlayed: number;
   perMatchCounts: number[];
 }
+
+const PODIUM: Record<number, { bar: string; text: string; bg: string }> = {
+  0: { bar: 'bg-amber-400', text: 'text-amber-600', bg: 'bg-amber-50/70 ring-amber-100' },
+  1: { bar: 'bg-zinc-400', text: 'text-zinc-600', bg: 'bg-zinc-50 ring-zinc-200' },
+  2: { bar: 'bg-orange-400', text: 'text-orange-600', bg: 'bg-orange-50/70 ring-orange-100' },
+};
 
 export default function TopScorers() {
   const teams = useTeams();
@@ -70,6 +77,7 @@ export default function TopScorers() {
 
   const teamMap = new Map(teams.map((t) => [t.id, t]));
   const hasZenske = teams.some((t) => getDivisionKey(t.division) === 'z');
+  const totalGoals = rows.reduce((a, r) => a + r.goals, 0);
 
   return (
     <div className="space-y-6">
@@ -107,45 +115,91 @@ export default function TopScorers() {
         className="input"
       />
 
-      {rows.length === 0 && (
+      {rows.length === 0 ? (
         <div className="card p-8 text-center text-black/50">Jos nema golova.</div>
-      )}
+      ) : (
+        <section className="space-y-3">
+          <div className="flex items-center gap-2.5">
+            <span className="inline-block w-1 h-4 rounded-full bg-brand-dark" />
+            <h2 className="font-cond font-extrabold text-xs tracking-[0.18em] uppercase text-black/55">
+              Poredak
+            </h2>
+            <span className="font-cond text-[11px] font-bold uppercase tracking-[0.14em] rounded-full px-2 py-[1px] bg-brand-blue/10 text-brand-blue">
+              {rows.length} {rows.length === 1 ? 'strijelac' : 'strijelaca'}
+            </span>
+            <span className="ml-auto font-cond text-[11px] font-bold uppercase tracking-[0.14em] text-black/45">
+              {totalGoals} golova
+            </span>
+          </div>
 
-      <div className="card divide-y divide-black/5">
-        {rows.map((r, i) => {
-          const team = teamMap.get(r.teamId);
-          const hat = Math.max(0, ...r.perMatchCounts) >= 3;
-          const perGame = r.matchesPlayed > 0 ? (r.goals / r.matchesPlayed).toFixed(2) : '—';
-          return (
-            <Link
-              key={`${r.teamId}|${r.player}`}
-              to={team ? `/ekipe/${r.teamId}` : '#'}
-              className="flex items-center gap-4 px-4 py-3 hover:bg-black/[0.02] transition"
-            >
-              <div className={classNames(
-                'font-display text-2xl w-8 text-center',
-                i === 0 || i === 2 ? 'text-brand-blue' : i === 1 ? 'text-brand-red' : 'text-black/30'
-              )}>
-                {i + 1}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="font-bold flex items-center gap-2">
-                  <span className="truncate">{r.player}</span>
-                  {hat && (
-                    <span className="pill border-brand-blue/10 bg-brand-blue/10 text-brand-blue shrink-0" title="Hat-trick">
-                      Hat-trick
-                    </span>
-                  )}
-                </div>
-                <div className="text-xs text-black/40 font-cond tracking-[0.16em] uppercase">
-                  {team?.code ?? r.teamId} / {r.matchesPlayed} ut. / {perGame} po utakmici
-                </div>
-              </div>
-              <div className="font-display text-3xl text-brand-blue">{r.goals}</div>
-            </Link>
-          );
-        })}
-      </div>
+          <div className="card p-2 sm:p-3">
+            {rows.map((r, i) => (
+              <ScorerRow
+                key={`${r.teamId}|${r.player}`}
+                row={r}
+                rank={i}
+                team={teamMap.get(r.teamId)}
+              />
+            ))}
+          </div>
+        </section>
+      )}
     </div>
+  );
+}
+
+function ScorerRow({ row, rank, team }: { row: Row; rank: number; team?: Team }) {
+  const hat = Math.max(0, ...row.perMatchCounts) >= 3;
+  const perGame = row.matchesPlayed > 0 ? (row.goals / row.matchesPlayed).toFixed(2) : '—';
+  const podium = PODIUM[rank];
+  const teamColor = team?.color || undefined;
+
+  return (
+    <Link
+      to={team ? `/ekipe/${row.teamId}` : '#'}
+      className={classNames(
+        'relative flex items-center gap-3 rounded-xl px-3 py-2.5 mb-[5px] last:mb-0 transition',
+        podium ? `${podium.bg} ring-1 ring-inset` : 'hover:bg-black/[0.03]'
+      )}
+    >
+      <span
+        className="absolute left-0 top-3 bottom-3 w-[3px] rounded-full"
+        style={{ background: teamColor ?? 'rgba(0,0,0,0.06)' }}
+      />
+      <div
+        className={classNames(
+          'font-display text-2xl w-9 text-center shrink-0 pl-1',
+          podium ? podium.text : 'text-black/30'
+        )}
+      >
+        {rank + 1}
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2">
+          <span className="font-bold text-[15px] truncate">{row.player}</span>
+          {hat && (
+            <span
+              className="pill border-brand-blue/10 bg-brand-blue/10 text-brand-blue shrink-0"
+              title="Hat-trick"
+            >
+              Hat-trick
+            </span>
+          )}
+        </div>
+        <div className="font-cond text-[10px] uppercase tracking-[0.14em] text-black/45 mt-0.5 truncate">
+          <span className="font-bold text-black/65" style={teamColor ? { color: teamColor } : undefined}>
+            {team?.code ?? row.teamId}
+          </span>
+          <span className="mx-1.5 text-black/20">·</span>
+          {row.matchesPlayed} ut.
+          <span className="mx-1.5 text-black/20">·</span>
+          {perGame} po ut.
+        </div>
+      </div>
+      <div className="flex items-baseline gap-1 shrink-0">
+        <span className="font-display text-3xl leading-none text-brand-blue">{row.goals}</span>
+        <span className="font-cond text-[10px] uppercase tracking-[0.14em] text-black/35">gol</span>
+      </div>
+    </Link>
   );
 }

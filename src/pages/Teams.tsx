@@ -28,10 +28,7 @@ export default function Teams() {
   if (teams === null) {
     return (
       <div className="space-y-6">
-        <div>
-          <div className="font-cond text-xs font-bold uppercase tracking-[0.18em] text-black/45">Sudionici</div>
-          <h1 className="font-display text-5xl leading-none tracking-[0.04em] mt-2">Ekipe</h1>
-        </div>
+        <PageHeader />
         <SkeletonTeamGrid count={9} />
       </div>
     );
@@ -50,12 +47,13 @@ export default function Teams() {
   return (
     <div className="space-y-6">
       <header className="grid gap-4 lg:grid-cols-[1.2fr_1fr] lg:items-end">
-        <div>
-          <div className="font-cond text-xs font-bold uppercase tracking-[0.18em] text-black/45">Sudionici</div>
-          <h1 className="font-display text-5xl leading-none tracking-[0.04em] mt-2">Ekipe</h1>
-        </div>
+        <PageHeader />
         {finishedMatches.length > 0 && (
-          <button onClick={exportResults} className="btn-ghost justify-self-start lg:justify-self-end" title="Izvezi rezultate">
+          <button
+            onClick={exportResults}
+            className="btn-ghost justify-self-start lg:justify-self-end"
+            title="Izvezi rezultate"
+          >
             Izvezi rezultate
           </button>
         )}
@@ -72,17 +70,38 @@ export default function Teams() {
         <div className="card p-8 text-black/45 text-center">Nista nije pronadeno.</div>
       )}
 
-      <Group title="Muski" teams={muski} isFollowed={isFollowed} toggle={toggle} />
-      {zenske.length > 0 && <Group title="Zenski" teams={zenske} isFollowed={isFollowed} toggle={toggle} />}
+      <Group title="Muski" teams={muski} isFollowed={isFollowed} toggle={toggle} accent="blue" />
+      {zenske.length > 0 && (
+        <Group title="Zenski" teams={zenske} isFollowed={isFollowed} toggle={toggle} accent="red" />
+      )}
     </div>
   );
 }
 
-function Group({ title, teams, isFollowed, toggle }: {
+function PageHeader() {
+  return (
+    <div>
+      <div className="font-cond text-xs font-bold uppercase tracking-[0.18em] text-black/45">
+        Sudionici
+      </div>
+      <h1 className="font-display text-5xl leading-none tracking-[0.04em] mt-2">Ekipe</h1>
+      <p className="text-black/55 mt-3">Sve ekipe i igraci turnira.</p>
+    </div>
+  );
+}
+
+function Group({
+  title,
+  teams,
+  isFollowed,
+  toggle,
+  accent,
+}: {
   title: string;
   teams: Team[];
   isFollowed: (id: string) => boolean;
   toggle: (id: string) => void;
+  accent: 'blue' | 'red';
 }) {
   if (teams.length === 0) return null;
   const sorted = [...teams].sort((a, b) => {
@@ -90,48 +109,108 @@ function Group({ title, teams, isFollowed, toggle }: {
     const fb = isFollowed(b.id) ? 0 : 1;
     return fa - fb || a.code.localeCompare(b.code, 'hr');
   });
+  const accentBar = accent === 'blue' ? 'bg-brand-blue' : 'bg-brand-red';
+  const accentText = accent === 'blue' ? 'text-brand-blue' : 'text-brand-red';
+  const accentBg = accent === 'blue' ? 'bg-brand-blue/10' : 'bg-brand-red/10';
+
   return (
     <section className="space-y-3">
-      <h2 className="font-cond font-extrabold text-xs tracking-[0.18em] uppercase text-black/45">{title}</h2>
-      <div className="space-y-3">
-        {sorted.map((t) => {
-          const followed = isFollowed(t.id);
-          return (
-            <Link
-              key={t.id}
-              to={`/ekipe/${t.id}`}
-              className="card flex items-center gap-4 px-4 py-4 transition hover:border-black/15"
-            >
-              <div className="w-20 shrink-0">
-                <div className="font-display text-4xl leading-none truncate" style={t.color ? { color: t.color } : undefined}>
-                  {t.code}
-                </div>
-                <div className="font-cond text-[10px] uppercase tracking-[0.16em] text-black/35 mt-1">
-                  {getDivisionLabel(t.division)}
-                </div>
-              </div>
-              <div className="min-w-0 flex-1">
-                {t.displayName && t.displayName !== t.code && (
-                  <div className="font-semibold truncate">{t.displayName}</div>
-                )}
-                <div className="text-sm text-black/60 truncate">Kapetan: {t.captain || 'nije unesen'}</div>
-                <div className="text-xs text-black/40 mt-1">{t.playersCount} igraca</div>
-              </div>
-              <button
-                onClick={(e) => { e.preventDefault(); toggle(t.id); }}
-                className={classNames(
-                  'w-10 h-10 grid place-items-center rounded-full text-xl transition shrink-0',
-                  followed ? 'bg-brand-blue/10 text-brand-blue' : 'text-black/25 hover:bg-black/5 hover:text-black/55'
-                )}
-                aria-label={followed ? 'Prestani pratiti' : 'Prati ekipu'}
-                title={followed ? 'Pratis' : 'Prati ekipu'}
-              >
-                {followed ? '★' : '☆'}
-              </button>
-            </Link>
-          );
-        })}
+      <div className="flex items-center gap-2.5">
+        <span className={`inline-block w-1 h-4 rounded-full ${accentBar}`} />
+        <h2 className="font-cond font-extrabold text-xs tracking-[0.18em] uppercase text-black/55">
+          {title}
+        </h2>
+        <span
+          className={classNames(
+            'font-cond text-[11px] font-bold uppercase tracking-[0.14em] rounded-full px-2 py-[1px]',
+            accentBg,
+            accentText
+          )}
+        >
+          {teams.length}
+        </span>
+      </div>
+
+      <div className="card p-2 sm:p-3">
+        {sorted.map((t) => (
+          <TeamRow
+            key={t.id}
+            team={t}
+            followed={isFollowed(t.id)}
+            onToggle={() => toggle(t.id)}
+          />
+        ))}
       </div>
     </section>
+  );
+}
+
+function TeamRow({
+  team,
+  followed,
+  onToggle,
+}: {
+  team: Team;
+  followed: boolean;
+  onToggle: () => void;
+}) {
+  const hasCustomName = team.displayName && team.displayName !== team.code;
+  const accentColor = team.color || undefined;
+
+  return (
+    <Link
+      to={`/ekipe/${team.id}`}
+      className={classNames(
+        'relative flex items-center gap-4 rounded-xl px-3 py-3 mb-[5px] last:mb-0 transition',
+        followed
+          ? 'bg-brand-blue/[0.04] ring-1 ring-inset ring-brand-blue/15 hover:bg-brand-blue/[0.07]'
+          : 'hover:bg-black/[0.03]'
+      )}
+    >
+      <span
+        className="absolute left-0 top-3 bottom-3 w-[3px] rounded-full"
+        style={{ background: accentColor ?? 'rgba(0,0,0,0.08)' }}
+      />
+      <div className="w-[68px] shrink-0 pl-2">
+        <div
+          className="font-display text-[32px] leading-none tracking-wide truncate"
+          style={accentColor ? { color: accentColor } : undefined}
+        >
+          {team.code}
+        </div>
+        <div className="font-cond text-[9px] uppercase tracking-[0.14em] text-black/35 mt-1">
+          {getDivisionLabel(team.division)}
+        </div>
+      </div>
+
+      <div className="min-w-0 flex-1">
+        {hasCustomName && (
+          <div className="font-semibold text-[15px] truncate">{team.displayName}</div>
+        )}
+        <div className="text-sm text-black/60 truncate">
+          Kapetan: <span className="text-black/80">{team.captain || 'nije unesen'}</span>
+        </div>
+        <div className="font-cond text-[10px] uppercase tracking-[0.14em] text-black/40 mt-1">
+          {team.playersCount} igraca
+        </div>
+      </div>
+
+      <button
+        onClick={(e) => {
+          e.preventDefault();
+          onToggle();
+        }}
+        className={classNames(
+          'w-9 h-9 grid place-items-center rounded-full text-lg transition shrink-0',
+          followed
+            ? 'bg-brand-blue text-white shadow-sm'
+            : 'text-black/30 hover:bg-black/5 hover:text-black/60'
+        )}
+        aria-label={followed ? 'Prestani pratiti' : 'Prati ekipu'}
+        title={followed ? 'Pratis' : 'Prati ekipu'}
+      >
+        {followed ? '★' : '☆'}
+      </button>
+    </Link>
   );
 }
