@@ -1,15 +1,22 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { addDoc, collection, doc, setDoc } from 'firebase/firestore';
+import { addDoc, collection, doc, setDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { useTeam } from '../../lib/hooks';
 import Loading from '../../components/Loading';
-import type { Division, Player } from '../../lib/types';
+import TeamCrest from '../../components/TeamCrest';
+import { processCrestFile, uploadCrest, deleteCrestByUrl, type ProcessedCrest } from '../../lib/crest';
+import type { Division, Player, Team } from '../../lib/types';
 import { classNames } from '../../lib/utils';
 
-const EMPTY: { code: string; displayName: string; grade: number; class: string; division: Division; captain: string; contactEmail: string; players: Player[] } = {
-  code: '', displayName: '', grade: 1, class: '', division: 'Muški', captain: '', contactEmail: '', players: [],
+const EMPTY: { code: string; displayName: string; grade: number; class: string; division: Division; captain: string; contactEmail: string; players: Player[]; color: string } = {
+  code: '', displayName: '', grade: 1, class: '', division: 'Muški', captain: '', contactEmail: '', players: [], color: '',
 };
+
+const COLOR_PRESETS = [
+  '', '#1d4e9e', '#d42a3c', '#13152a', '#0f8a4f', '#e6a700',
+  '#8e24aa', '#00838f', '#f4511e', '#5d4037',
+];
 
 export default function TeamEdit() {
   const { id } = useParams();
@@ -21,6 +28,13 @@ export default function TeamEdit() {
   const [newPlayer, setNewPlayer] = useState('');
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+
+  const [existingCrestUrl, setExistingCrestUrl] = useState<string | null>(null);
+  const [pendingCrest, setPendingCrest] = useState<ProcessedCrest | null>(null);
+  const [removeExistingCrest, setRemoveExistingCrest] = useState(false);
+  const [crestBusy, setCrestBusy] = useState(false);
+  const [uploadPct, setUploadPct] = useState(0);
+  const [dragOver, setDragOver] = useState(false);
 
   useEffect(() => {
     if (isNew) return;
@@ -34,7 +48,11 @@ export default function TeamEdit() {
         captain: existing.captain,
         contactEmail: existing.contactEmail ?? '',
         players: existing.players ?? [],
+        color: existing.color ?? '',
       });
+      setExistingCrestUrl(existing.crestUrl ?? null);
+      setPendingCrest(null);
+      setRemoveExistingCrest(false);
     }
   }, [existing?.id]);
 
@@ -59,12 +77,38 @@ export default function TeamEdit() {
     update('players', form.players.map((p, idx) => ({ ...p, is_captain: idx === i ? !p.is_captain : false })));
   }
 
+  async function pickCrest(file: File | undefined | null) {
+    if (!file) return;
+    const allowed = ['image/png', 'image/jpeg', 'image/svg+xml', 'image/webp'];
+    if (!allowed.includes(file.type)) {
+      setErr('Dozvoljeni formati: PNG, JPEG, SVG, WebP.');
+      return;
+    }
+    setErr(null);
+    setCrestBusy(true);
+    try {
+      const processed = await processCrestFile(file);
+      setPendingCrest(processed);
+      setRemoveExistingCrest(false);
+    } catch (ex: any) {
+      setErr(ex?.message ?? 'Obrada slike nije uspjela.');
+    } finally {
+      setCrestBusy(false);
+    }
+  }
+
+  function clearCrest() {
+    setPendingCrest(null);
+    if (existingCrestUrl) setRemoveExistingCrest(true);
+  }
+
   async function save(e: React.FormEvent) {
     e.preventDefault();
     setErr(null);
     if (!form.code.trim()) { setErr('Šifra ekipe je obavezna.'); return; }
     setBusy(true);
     try {
+      const keepExisting = existingCrestUrl && !removeExistingCrest && !pendingCrest;
       const data = {
         code: form.code.trim(),
         displayName: form.displayName.trim() || form.code.trim(),
@@ -75,18 +119,50 @@ export default function TeamEdit() {
         contactEmail: form.contactEmail.trim() || null,
         playersCount: form.players.length,
         players: form.players,
+        color: form.color || null,
+        crestUrl: keepExisting ? existingCrestUrl : null,
       };
+
+      let teamId = id;
       if (isNew) {
-        await addDoc(collection(db, 'teams'), data);
+        const ref = await addDoc(collection(db, 'teams'), data);
+        teamId = ref.id;
       } else {
         await setDoc(doc(db, 'teams', id!), data);
       }
+
+      if (pendingCrest && teamId) {
+        setUploadPct(0);
+        const url = await uploadCrest(teamId, pendingCrest, setUploadPct);
+        await updateDoc(doc(db, 'teams', teamId), { crestUrl: url });
+        if (existingCrestUrl && existingCrestUrl !== url) {
+          await deleteCrestByUrl(existingCrestUrl);
+        }
+      } else if (removeExistingCrest && existingCrestUrl) {
+        await deleteCrestByUrl(existingCrestUrl);
+      }
+
       nav('/admin/ekipe');
     } catch (ex: any) {
       setErr(ex.message ?? 'Greška');
       setBusy(false);
     }
   }
+
+  const previewTeam: Team = {
+    id: id ?? 'preview',
+    code: form.code || '?',
+    displayName: form.displayName || form.code || '?',
+    grade: form.grade,
+    class: form.class,
+    division: form.division,
+    captain: form.captain,
+    playersCount: form.players.length,
+    players: form.players,
+    color: form.color || null,
+    crestUrl: pendingCrest ? pendingCrest.dataUrl : (removeExistingCrest ? null : existingCrestUrl),
+  };
+  const showingCrest = !!previewTeam.crestUrl;
 
   return (
     <div>
@@ -113,6 +189,84 @@ export default function TeamEdit() {
                 {d}
               </button>
             ))}
+          </div>
+        </div>
+
+        <div>
+          <Label>Boja ekipe (opcionalno)</Label>
+          <div className="flex items-center gap-2 flex-wrap">
+            {COLOR_PRESETS.map((c) => (
+              <button
+                key={c || 'none'}
+                type="button"
+                onClick={() => update('color', c)}
+                className={classNames(
+                  'w-8 h-8 rounded-full border-2 transition',
+                  form.color === c ? 'border-brand-dark scale-110' : 'border-black/10'
+                )}
+                style={{ background: c || '#fff' }}
+                title={c || 'Bez boje'}
+              >
+                {!c && <span className="text-black/30 text-xs">∅</span>}
+              </button>
+            ))}
+            <input
+              type="color"
+              value={form.color || '#1d4e9e'}
+              onChange={(e) => update('color', e.target.value)}
+              className="w-10 h-10 rounded-xl border border-black/10 cursor-pointer"
+              title="Vlastita boja"
+            />
+          </div>
+        </div>
+
+        <div>
+          <Label>Grb ekipe (opcionalno)</Label>
+          <div
+            onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+            onDragLeave={() => setDragOver(false)}
+            onDrop={(e) => {
+              e.preventDefault();
+              setDragOver(false);
+              pickCrest(e.dataTransfer.files?.[0]);
+            }}
+            className={classNames(
+              'flex items-center gap-4 rounded-2xl border-2 border-dashed p-3 transition',
+              dragOver ? 'border-brand-blue bg-brand-blue/5' : 'border-black/10'
+            )}
+          >
+            <TeamCrest team={previewTeam} size={64} rounded="lg" />
+            <div className="flex-1 min-w-0">
+              <div className="text-xs text-black/55">
+                PNG, JPEG, SVG ili WebP. Automatski se smanjuje na 512×512 i ≤100 KB.
+              </div>
+              {crestBusy && (
+                <div className="font-cond text-[11px] uppercase tracking-widest text-black/40 mt-1">
+                  Obrada slike...
+                </div>
+              )}
+              {busy && uploadPct > 0 && (
+                <div className="mt-2 h-1 bg-black/10 rounded-full overflow-hidden">
+                  <div className="h-full bg-brand-blue transition-all" style={{ width: `${uploadPct}%` }} />
+                </div>
+              )}
+              <div className="flex gap-2 mt-2">
+                <label className="btn-ghost cursor-pointer">
+                  {showingCrest ? 'Promijeni' : 'Odaberi sliku'}
+                  <input
+                    type="file"
+                    accept="image/png,image/jpeg,image/svg+xml,image/webp"
+                    className="hidden"
+                    onChange={(e) => { pickCrest(e.target.files?.[0]); e.target.value = ''; }}
+                  />
+                </label>
+                {showingCrest && (
+                  <button type="button" onClick={clearCrest} className="btn-ghost text-brand-red">
+                    Ukloni
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
         </div>
 

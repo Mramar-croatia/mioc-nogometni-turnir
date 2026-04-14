@@ -1,14 +1,54 @@
+import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { useMatches, useTeams } from '../lib/hooks';
+import { useAllGoals, useMatches, useTeams } from '../lib/hooks';
+import { useFollowedTeams } from '../lib/favorites';
 import MatchCard from '../components/MatchCard';
-import Loading from '../components/Loading';
+import Countdown from '../components/Countdown';
+import { SkeletonList, SkeletonMatchCard } from '../components/Skeleton';
 import { formatDateHr, todayIso } from '../lib/utils';
 
 export default function Home() {
   const matches = useMatches();
   const teams = useTeams();
+  const allGoals = useAllGoals(matches);
+  const { ids: followedIds } = useFollowedTeams();
 
-  if (matches === null || teams === null) return <Loading />;
+  const stats = useMemo(() => {
+    if (!matches) return null;
+    const finished = matches.filter((m) => m.status === 'finished');
+    const goalsCount = allGoals?.length ?? null;
+    let topScorer: { name: string; goals: number } | null = null;
+    if (allGoals) {
+      const map = new Map<string, number>();
+      for (const g of allGoals) {
+        if (!g.playerName) continue;
+        map.set(g.playerName, (map.get(g.playerName) ?? 0) + 1);
+      }
+      for (const [name, n] of map) {
+        if (!topScorer || n > topScorer.goals) topScorer = { name, goals: n };
+      }
+    }
+    return {
+      total: matches.length,
+      played: finished.length,
+      remaining: matches.length - finished.length,
+      goalsCount,
+      topScorer,
+    };
+  }, [matches, allGoals]);
+
+  if (matches === null || teams === null) {
+    return (
+      <div>
+        <div className="text-center mb-7">
+          <div className="pill bg-brand-blue/10 text-brand-blue mb-3">Školski turnir</div>
+          <h1 className="font-display text-5xl tracking-wide leading-none">Nogometni turnir</h1>
+        </div>
+        <SkeletonMatchCard />
+        <SkeletonList count={3} />
+      </div>
+    );
+  }
 
   const teamMap = new Map((teams ?? []).map((t) => [t.id, t]));
   const today = todayIso();
@@ -18,10 +58,17 @@ export default function Home() {
   const upcoming = matches
     .filter((m) => m.status === 'scheduled' && m.date >= today)
     .slice(0, 4);
+
+  const heroMatch = live[0] ?? upcoming[0] ?? null;
+  const heroLive = !!live[0];
   const recent = matches
     .filter((m) => m.status === 'finished')
     .slice(-3)
     .reverse();
+
+  const followed = matches.filter(
+    (m) => (followedIds.has(m.homeId) || followedIds.has(m.awayId)) && m.status !== 'finished'
+  ).slice(0, 3);
 
   const empty = matches.length === 0;
 
@@ -39,10 +86,41 @@ export default function Home() {
         </div>
       )}
 
-      {live.length > 0 && (
+      {heroMatch && (
+        <Countdown
+          match={heroMatch}
+          home={teamMap.get(heroMatch.homeId)}
+          away={teamMap.get(heroMatch.awayId)}
+          live={heroLive}
+        />
+      )}
+
+      {!empty && stats && (
+        <div className="card p-4 mb-7">
+          <div className="grid grid-cols-3 gap-3">
+            <Stat label="Odigrano" value={`${stats.played} / ${stats.total}`} />
+            <Stat label="Golova" value={stats.goalsCount ?? '—'} />
+            <Stat
+              label="Vodeći strijelac"
+              value={stats.topScorer ? `${stats.topScorer.name.split(' ')[0]} · ${stats.topScorer.goals}` : '—'}
+              small
+            />
+          </div>
+        </div>
+      )}
+
+      {live.length > 1 && (
         <Section title="Uživo">
-          {live.map((m, i) => (
+          {live.slice(1).map((m, i) => (
             <MatchCard key={m.id} match={m} home={teamMap.get(m.homeId)} away={teamMap.get(m.awayId)} index={i} />
+          ))}
+        </Section>
+      )}
+
+      {followed.length > 0 && (
+        <Section title="★ Ekipe koje pratiš">
+          {followed.map((m, i) => (
+            <MatchCard key={m.id} match={m} home={teamMap.get(m.homeId)} away={teamMap.get(m.awayId)} index={i} compact />
           ))}
         </Section>
       )}
@@ -70,6 +148,15 @@ export default function Home() {
           ))}
         </Section>
       )}
+    </div>
+  );
+}
+
+function Stat({ label, value, small }: { label: string; value: string | number; small?: boolean }) {
+  return (
+    <div className="text-center min-w-0">
+      <div className={small ? 'font-cond font-bold text-base truncate' : 'font-display text-2xl leading-none'}>{value}</div>
+      <div className="font-cond text-[10px] uppercase tracking-widest text-black/40 mt-1">{label}</div>
     </div>
   );
 }

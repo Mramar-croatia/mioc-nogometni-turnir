@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useMatches, useTeams } from '../lib/hooks';
 import MatchCard from '../components/MatchCard';
-import Loading from '../components/Loading';
+import { SkeletonList } from '../components/Skeleton';
 import { classNames, formatDateHr } from '../lib/utils';
 
 type Filter = 'all' | 'finished' | 'scheduled';
@@ -27,7 +27,14 @@ export default function Matches() {
     return Array.from(map.entries()).sort(([a], [b]) => a.localeCompare(b));
   }, [matches, filter]);
 
-  if (matches === null || teams === null) return <Loading />;
+  if (matches === null || teams === null) {
+    return (
+      <div>
+        <h1 className="font-display text-4xl mb-5 tracking-wide">Utakmice</h1>
+        <SkeletonList count={5} />
+      </div>
+    );
+  }
   const teamMap = new Map(teams.map((t) => [t.id, t]));
 
   return (

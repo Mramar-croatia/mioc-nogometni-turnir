@@ -58,6 +58,15 @@ U Firebase konzoli → **Firestore Database → Rules** — kopiraj sadržaj dat
 
 Pravila kažu: **svi mogu čitati javne podatke, samo dokumenti u `/admins/{uid}` mogu pisati.**
 
+### 4a) Omogući Firebase Storage (za grbove ekipa)
+
+1. U Firebase konzoli → **Build → Storage → Get started**.
+2. Lokacija: `eur3 (europe-west)`, odaberi **Production mode**.
+3. Otvori karticu **Rules** i zalijepi sadržaj datoteke `storage.rules` iz repoa, pa **Publish**.
+   - Ili preko CLI-ja: `firebase deploy --only storage`.
+
+Pravila dozvoljavaju javno čitanje grbova iz `team-crests/`, a upis samo adminima.
+
 ### 5) Pokreni lokalno
 
 ```bash

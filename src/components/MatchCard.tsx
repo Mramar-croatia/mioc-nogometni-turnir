@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import type { Match, Team, Goal } from '../lib/types';
 import GoalTimeline from './GoalTimeline';
+import TeamCrest from './TeamCrest';
 import { classNames, shortDateHr, dayLabelShort } from '../lib/utils';
 
 interface Props {
@@ -13,6 +14,9 @@ interface Props {
   linkable?: boolean;
 }
 
+const BLUE = '#1d4e9e';
+const RED = '#d42a3c';
+
 export default function MatchCard({ match, home, away, goals = [], index = 0, compact, linkable = true }: Props) {
   const hasGoals = goals.length > 0 && match.status !== 'scheduled';
   const hasPen = !!match.penalties;
@@ -20,6 +24,9 @@ export default function MatchCard({ match, home, away, goals = [], index = 0, co
   const live = match.status === 'live';
   const winnerHome = finished && match.winnerId === match.homeId;
   const winnerAway = finished && match.winnerId === match.awayId;
+
+  const homeColor = home?.color || BLUE;
+  const awayColor = away?.color || RED;
 
   const statusLabel =
     live ? 'UŽIVO'
@@ -31,14 +38,14 @@ export default function MatchCard({ match, home, away, goals = [], index = 0, co
 
   const inner = (
     <div
-      className="card animate-slideUp"
+      className={classNames('card animate-slideUp', finished && 'opacity-[0.97]')}
       style={{ animationDelay: `${index * 0.08}s` }}
     >
       <div
         className="h-1"
         style={{
           background:
-            'linear-gradient(90deg, #1d4e9e 0%, #1d4e9e 48%, transparent 48%, transparent 52%, #d42a3c 52%, #d42a3c 100%)',
+            `linear-gradient(90deg, ${homeColor} 0%, ${homeColor} 48%, transparent 48%, transparent 52%, ${awayColor} 52%, ${awayColor} 100%)`,
         }}
       />
       <div className={classNames('px-5', compact ? 'py-3' : 'py-4')}>
@@ -48,55 +55,76 @@ export default function MatchCard({ match, home, away, goals = [], index = 0, co
           </span>
           <span
             className={classNames(
-              'pill',
+              'pill inline-flex items-center gap-1.5',
               live && 'bg-brand-red/10 text-brand-red',
               finished && hasPen && 'bg-brand-red/10 text-brand-red',
               finished && !hasPen && 'bg-black/5 text-black/45',
               !finished && !live && 'bg-black/5 text-black/40'
             )}
           >
+            {live && (
+              <span className="relative inline-flex w-1.5 h-1.5">
+                <span className="absolute inline-flex w-full h-full rounded-full bg-brand-red animate-livePulse" />
+                <span className="relative inline-flex w-1.5 h-1.5 rounded-full bg-brand-red" />
+              </span>
+            )}
             {statusLabel}
           </span>
         </div>
 
         <div className="flex items-center justify-center mb-1">
-          <div className="flex-1 text-right pr-3.5">
+          <div className="flex-1 flex items-center justify-end gap-2 pr-3.5 min-w-0">
             <div
-              className={classNames(
-                'font-display text-[42px] leading-none tracking-wide',
-                winnerHome ? 'text-brand-blue' : finished ? 'text-black/15' : 'text-brand-dark'
-              )}
+              className="font-display text-[42px] leading-none tracking-wide transition-colors truncate"
+              style={{
+                color: winnerHome ? homeColor : finished ? 'rgba(0,0,0,0.15)' : '#13152a',
+              }}
             >
               {homeCode}
             </div>
+            <TeamCrest team={home} size={28} />
           </div>
           <div className="flex items-center gap-0.5 bg-brand-dark rounded-2xl px-3.5 py-2 shrink-0">
-            <span className="font-display text-[44px] leading-none w-8 text-center text-white">
+            <span
+              key={`h-${match.homeScore}`}
+              className={classNames(
+                'font-display text-[44px] leading-none w-8 text-center text-white',
+                (finished || live) && 'animate-pop'
+              )}
+            >
               {finished || live ? match.homeScore : '—'}
             </span>
             <span className="text-xl text-white/25 mx-0.5">:</span>
-            <span className="font-display text-[44px] leading-none w-8 text-center text-white">
+            <span
+              key={`a-${match.awayScore}`}
+              className={classNames(
+                'font-display text-[44px] leading-none w-8 text-center text-white',
+                (finished || live) && 'animate-pop'
+              )}
+            >
               {finished || live ? match.awayScore : '—'}
             </span>
           </div>
-          <div className="flex-1 text-left pl-3.5">
+          <div className="flex-1 flex items-center justify-start gap-2 pl-3.5 min-w-0">
+            <TeamCrest team={away} size={28} />
             <div
-              className={classNames(
-                'font-display text-[42px] leading-none tracking-wide',
-                winnerAway ? 'text-brand-red' : finished ? 'text-black/15' : 'text-brand-dark'
-              )}
+              className="font-display text-[42px] leading-none tracking-wide transition-colors truncate"
+              style={{
+                color: winnerAway ? awayColor : finished ? 'rgba(0,0,0,0.15)' : '#13152a',
+              }}
             >
               {awayCode}
             </div>
           </div>
         </div>
 
-        {hasGoals && <GoalTimeline goals={goals} homeId={match.homeId} />}
+        {hasGoals && <GoalTimeline goals={goals} homeId={match.homeId} homeColor={homeColor} awayColor={awayColor} />}
 
         {hasGoals && !compact && (
           <div className="mt-2 mb-3.5">
             {goals.map((g, i) => {
               const isHome = g.teamId === match.homeId;
+              const color = isHome ? homeColor : awayColor;
               return (
                 <div
                   key={g.id || i}
@@ -106,10 +134,8 @@ export default function MatchCard({ match, home, away, goals = [], index = 0, co
                   )}
                 >
                   <div
-                    className={classNames(
-                      'w-7 h-7 rounded-full grid place-items-center text-[11px] font-extrabold shrink-0',
-                      isHome ? 'bg-brand-blue/10 text-brand-blue' : 'bg-brand-red/10 text-brand-red'
-                    )}
+                    className="w-7 h-7 rounded-full grid place-items-center text-[11px] font-extrabold shrink-0"
+                    style={{ background: `${color}1a`, color }}
                   >
                     G
                   </div>
@@ -118,10 +144,8 @@ export default function MatchCard({ match, home, away, goals = [], index = 0, co
                   </span>
                   <span className="font-bold text-[15px]">{g.playerName}</span>
                   <span
-                    className={classNames(
-                      'ml-auto text-[13px] font-semibold opacity-50',
-                      isHome ? 'text-brand-blue' : 'text-brand-red'
-                    )}
+                    className="ml-auto text-[13px] font-semibold opacity-60"
+                    style={{ color }}
                   >
                     {isHome ? homeCode : awayCode}
                   </span>
@@ -143,19 +167,18 @@ export default function MatchCard({ match, home, away, goals = [], index = 0, co
 
         {finished && match.winnerId && (
           <div
-            className={classNames(
-              'rounded-2xl px-4 py-2.5 flex items-center justify-center gap-2',
-              winnerHome
-                ? 'bg-gradient-to-br from-brand-blue/10 to-brand-blue/5'
-                : 'bg-gradient-to-br from-brand-red/10 to-brand-red/5'
-            )}
+            className="rounded-2xl px-4 py-2.5 flex items-center justify-center gap-2"
+            style={{
+              background: `linear-gradient(135deg, ${winnerHome ? homeColor : awayColor}1a 0%, ${winnerHome ? homeColor : awayColor}0d 100%)`,
+            }}
           >
-            <div className={classNames('w-1.5 h-1.5 rounded-full', winnerHome ? 'bg-brand-blue' : 'bg-brand-red')} />
+            <div
+              className="w-1.5 h-1.5 rounded-full"
+              style={{ background: winnerHome ? homeColor : awayColor }}
+            />
             <span
-              className={classNames(
-                'font-cond text-sm font-bold tracking-wider uppercase',
-                winnerHome ? 'text-brand-blue' : 'text-brand-red'
-              )}
+              className="font-cond text-sm font-bold tracking-wider uppercase"
+              style={{ color: winnerHome ? homeColor : awayColor }}
             >
               Pobjednik — {winnerHome ? homeCode : awayCode}
               {hasPen ? ' (penali)' : ''}

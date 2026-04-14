@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
 import {
-  collection, doc, onSnapshot, orderBy, query, getDoc,
+  collection, doc, onSnapshot, orderBy, query, getDoc, getDocs, collectionGroup,
 } from 'firebase/firestore';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { auth, db } from './firebase';
-import type { Team, Match, Goal, BracketStage2 } from './types';
+import type { Team, Match, Goal, Card, BracketStage2 } from './types';
 
 export function useTeams() {
   const [teams, setTeams] = useState<Team[] | null>(null);
@@ -69,6 +69,53 @@ export function useGoals(matchId: string | undefined) {
       setGoals(snap.docs.map((d) => ({ id: d.id, ...(d.data() as any) })));
     });
   }, [matchId]);
+  return goals;
+}
+
+export function useCards(matchId: string | undefined) {
+  const [cards, setCards] = useState<Card[]>([]);
+  useEffect(() => {
+    if (!matchId) return;
+    const q = query(collection(db, 'matches', matchId, 'cards'), orderBy('minute'));
+    return onSnapshot(q, (snap) => {
+      setCards(snap.docs.map((d) => ({ id: d.id, ...(d.data() as any) })));
+    }, () => setCards([]));
+  }, [matchId]);
+  return cards;
+}
+
+// Aggregates every goal across every match. Tries a collection-group query
+// first (fast, one round-trip); falls back to per-match reads if rules
+// aren't deployed yet.
+export function useAllGoals(matches: Match[] | null) {
+  const [goals, setGoals] = useState<(Goal & { matchId: string })[] | null>(null);
+  useEffect(() => {
+    if (matches === null) return;
+    if (matches.length === 0) { setGoals([]); return; }
+    let cancelled = false;
+    (async () => {
+      try {
+        const snap = await getDocs(collectionGroup(db, 'goals'));
+        if (cancelled) return;
+        const list = snap.docs.map((d) => ({
+          id: d.id, matchId: d.ref.parent.parent?.id ?? '', ...(d.data() as any),
+        })) as (Goal & { matchId: string })[];
+        setGoals(list);
+      } catch {
+        try {
+          const all = await Promise.all(matches.map((m) =>
+            getDocs(collection(db, 'matches', m.id, 'goals')).then((s) =>
+              s.docs.map((d) => ({ id: d.id, matchId: m.id, ...(d.data() as any) }))
+            )
+          ));
+          if (!cancelled) setGoals(all.flat() as any);
+        } catch {
+          if (!cancelled) setGoals([]);
+        }
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [matches]);
   return goals;
 }
 

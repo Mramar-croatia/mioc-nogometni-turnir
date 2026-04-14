@@ -26,4 +26,9 @@
   .pill {
     @apply inline-flex items-center rounded-full px-3 py-1 text-xs font-cond font-bold tracking-widest uppercase;
   }
+  .skeleton {
+    background: linear-gradient(90deg, #eceef3 0%, #f6f7fa 40%, #eceef3 80%);
+    background-size: 800px 100%;
+    @apply animate-shimmer rounded-xl;
+  }
 }

@@ -24,6 +24,21 @@ service cloud.firestore {
         allow read;
         allow write: if isAdmin();
       }
+
+      match /cards/{cardId} {
+        allow read;
+        allow write: if isAdmin();
+      }
+    }
+
+    // Collection-group queries (used by Strijelci, stats dashboard).
+    match /{path=**}/goals/{goalId} {
+      allow read;
+      allow write: if isAdmin();
+    }
+    match /{path=**}/cards/{cardId} {
+      allow read;
+      allow write: if isAdmin();
     }
 
     match /brackets/{id} {

@@ -19,12 +19,26 @@ export interface Team {
   contactEmail?: string;
   playersCount: number;
   players: Player[];
+  color?: string | null;
+  crestUrl?: string | null;
 }
 
 export interface Goal {
   id: string;
   playerName: string;
   teamId: string;
+  minute: number;
+  half: Half;
+  createdAt?: number;
+}
+
+export type CardColor = 'yellow' | 'red';
+
+export interface Card {
+  id: string;
+  playerName: string;
+  teamId: string;
+  color: CardColor;
   minute: number;
   half: Half;
   createdAt?: number;
@@ -46,6 +60,9 @@ export interface Match {
   penalties: { home: number; away: number } | null;
   durationMin: number;
   updatedAt?: number;
+  commentary?: string;
+  mvpName?: string;
+  mvpTeamId?: string;
 }
 
 export interface BracketSlot {

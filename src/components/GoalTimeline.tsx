@@ -2,9 +2,16 @@ import type { Goal } from '../lib/types';
 
 const MATCH_LEN = 20;
 
+interface Props {
+  goals: Goal[];
+  homeId: string;
+  homeColor?: string;
+  awayColor?: string;
+}
+
 export default function GoalTimeline({
-  goals, homeId,
-}: { goals: Goal[]; homeId: string }) {
+  goals, homeId, homeColor = '#1d4e9e', awayColor = '#d42a3c',
+}: Props) {
   return (
     <div className="pt-3.5 pb-1.5 relative">
       <div className="h-[3px] bg-[#edeef3] rounded relative">
@@ -12,7 +19,7 @@ export default function GoalTimeline({
         {goals.map((g, i) => {
           const pct = Math.min((g.minute / MATCH_LEN) * 100, 98);
           const isHome = g.teamId === homeId;
-          const color = isHome ? '#1d4e9e' : '#d42a3c';
+          const color = isHome ? homeColor : awayColor;
           return (
             <div
               key={i}
