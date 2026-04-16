@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import type { Match, Team, Goal } from '../lib/types';
 import GoalTimeline from './GoalTimeline';
 import { classNames, shortDateHr, dayLabelShort } from '../lib/utils';
+import { useMatchClock } from '../lib/matchClock';
 
 interface Props {
   match: Match;
@@ -27,6 +28,16 @@ export default function MatchCard({ match, home, away, goals = [], index = 0, co
   const homeColor = home?.color || BLUE;
   const awayColor = away?.color || RED;
 
+  const {
+    displayTime: clockTime,
+    phase: clockPhase,
+    phaseLabel: clockPhaseLabel,
+    running: clockRunning,
+  } = useMatchClock(match);
+
+  const showLiveBanner = live && clockPhase !== 'pre';
+  const liveClockText = clockPhase === 'HT' ? '—' : clockTime;
+
   const statusLabel =
     live ? 'UZIVO'
       : finished ? (hasPen ? 'PENALI' : 'KRAJ')
@@ -35,7 +46,50 @@ export default function MatchCard({ match, home, away, goals = [], index = 0, co
   const homeCode = home?.code ?? match.homeId;
   const awayCode = away?.code ?? match.awayId;
 
-  const inner = (
+  const banner = showLiveBanner ? (
+    <div
+      className={classNames(
+        'card overflow-hidden',
+        clockPhase === 'HT' ? 'bg-brand-blue/10' : 'bg-brand-red/10',
+      )}
+    >
+      <div className={classNames('h-1', clockPhase === 'HT' ? 'bg-brand-blue' : 'bg-brand-red')} />
+      <div className="px-5 py-4 flex items-center gap-4">
+        <span className="relative inline-flex w-3 h-3 shrink-0">
+          {clockRunning && (
+            <span className={classNames(
+              'absolute inline-flex w-full h-full rounded-full animate-livePulse opacity-70',
+              clockPhase === 'HT' ? 'bg-brand-blue' : 'bg-brand-red',
+            )} />
+          )}
+          <span className={classNames(
+            'relative inline-flex w-3 h-3 rounded-full',
+            clockPhase === 'HT' ? 'bg-brand-blue' : 'bg-brand-red',
+          )} />
+        </span>
+        <div className="flex flex-col leading-tight min-w-0">
+          <span className={classNames(
+            'font-cond text-[11px] font-bold uppercase tracking-[0.2em]',
+            clockPhase === 'HT' ? 'text-brand-blue' : 'text-brand-red',
+          )}>
+            {clockPhase === 'HT' ? 'Poluvrijeme' : 'Uživo'}
+          </span>
+          <span className="font-cond text-sm font-semibold text-black/55 uppercase tracking-[0.14em]">
+            {clockPhaseLabel}
+            {!clockRunning && clockPhase !== 'HT' ? ' · pauza' : ''}
+          </span>
+        </div>
+        <div className={classNames(
+          'ml-auto font-display text-5xl sm:text-6xl leading-none tracking-wide tabular-nums',
+          clockPhase === 'HT' ? 'text-brand-blue' : 'text-brand-red',
+        )}>
+          {liveClockText}
+        </div>
+      </div>
+    </div>
+  ) : null;
+
+  const card = (
     <div
       className={classNames('card animate-slideUp', finished && 'opacity-[0.97]')}
       style={{ animationDelay: `${index * 0.08}s` }}
@@ -186,6 +240,18 @@ export default function MatchCard({ match, home, away, goals = [], index = 0, co
     </div>
   );
 
-  if (!linkable) return inner;
-  return <Link to={`/utakmice/${match.id}`} className="block mb-4">{inner}</Link>;
+  if (!linkable) {
+    return (
+      <div className="space-y-3">
+        {banner}
+        {card}
+      </div>
+    );
+  }
+  return (
+    <Link to={`/utakmice/${match.id}`} className="block mb-4 space-y-3">
+      {banner}
+      {card}
+    </Link>
+  );
 }

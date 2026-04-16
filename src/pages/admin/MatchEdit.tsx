@@ -6,8 +6,19 @@ import {
 import { db } from '../../lib/firebase';
 import { useCards, useGoals, useMatch, useTeam } from '../../lib/hooks';
 import Loading from '../../components/Loading';
-import type { CardColor, Goal, Half, MatchStatus, Team } from '../../lib/types';
+import type { CardColor, Goal, Half, Match, MatchStatus, Team } from '../../lib/types';
 import { classNames } from '../../lib/utils';
+import {
+  endFirstHalf,
+  endMatchClock,
+  getClock,
+  pauseClock,
+  resetClock,
+  resumeClock,
+  startFirstHalf,
+  startSecondHalf,
+  useMatchClock,
+} from '../../lib/matchClock';
 
 type SideTeam = Team | null | undefined;
 
@@ -149,6 +160,7 @@ export default function MatchEdit() {
       status: 'scheduled',
       penalties: null,
       winnerId: null,
+      clock: resetClock(),
       updatedAt: serverTimestamp(),
     });
     setHomeScore(0);
@@ -189,6 +201,8 @@ export default function MatchEdit() {
       <h1 className="font-display text-3xl mt-2 mb-4 tracking-wide">
         {home?.code ?? '?'} vs {away?.code ?? '?'}
       </h1>
+
+      <MatchClockCard matchId={id!} match={match} />
 
       <div className="card p-5 mb-5">
         <div className="grid grid-cols-2 gap-2 mb-4">
@@ -654,6 +668,140 @@ function CardAdder({ matchId, homeId, awayId, home, away }: {
       </div>
       <button className="btn-primary w-full" disabled={busy || !player.trim()}>Dodaj karton</button>
     </form>
+  );
+}
+
+function MatchClockCard({ matchId, match }: { matchId: string; match: Match }) {
+  const { displayTime, phase, phaseLabel, running } = useMatchClock(match);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  async function apply(patch: Record<string, unknown>, confirmMessage?: string) {
+    if (confirmMessage && !confirm(confirmMessage)) return;
+    setBusy(true);
+    setErr(null);
+    try {
+      await updateDoc(doc(db, 'matches', matchId), {
+        ...patch,
+        updatedAt: serverTimestamp(),
+      });
+    } catch (ex) {
+      setErr(ex instanceof Error ? ex.message : 'Ažuriranje nije uspjelo.');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const clock = getClock(match);
+  const now = Date.now();
+
+  const onStartH1 = () =>
+    apply({ clock: startFirstHalf(now), status: 'live' as MatchStatus });
+  const onPause = () => apply({ clock: pauseClock(clock, now) });
+  const onResume = () => apply({ clock: resumeClock(clock, now) });
+  const onEndH1 = () => apply({ clock: endFirstHalf(now) });
+  const onStartH2 = () => apply({ clock: startSecondHalf(now) });
+  const onEndMatch = () =>
+    apply(
+      { clock: endMatchClock(clock, now), status: 'finished' as MatchStatus },
+      'Završiti utakmicu?',
+    );
+  const onReset = () =>
+    apply(
+      { clock: resetClock(), status: 'scheduled' as MatchStatus },
+      'Poništiti sat i vratiti na "Planirano"?',
+    );
+
+  const accent =
+    phase === 'pre' || phase === 'FT'
+      ? 'text-black/50'
+      : phase === 'HT'
+        ? 'text-brand-blue'
+        : 'text-brand-red';
+
+  return (
+    <div className="card p-5 mb-5">
+      <div className="font-cond text-xs uppercase tracking-widest text-black/40 mb-2 text-center">
+        Vrijeme utakmice
+      </div>
+      <div className="flex items-center justify-center gap-3 mb-1">
+        {running && phase !== 'HT' && (
+          <span className="relative inline-flex w-2 h-2">
+            <span className="absolute inline-flex w-full h-full rounded-full bg-brand-red animate-livePulse" />
+            <span className="relative inline-flex w-2 h-2 rounded-full bg-brand-red" />
+          </span>
+        )}
+        <div className={classNames('font-display text-5xl tracking-wide tabular-nums', accent)}>
+          {displayTime}
+        </div>
+      </div>
+      <div className="text-center font-cond text-xs uppercase tracking-widest text-black/55 mb-4">
+        {phaseLabel}
+        {!running && phase !== 'pre' && phase !== 'FT' ? ' · pauza' : ''}
+      </div>
+
+      <div className="grid grid-cols-2 gap-2">
+        {phase === 'pre' && (
+          <button onClick={onStartH1} disabled={busy} className="btn-primary col-span-2">
+            Pokreni 1. poluvrijeme
+          </button>
+        )}
+
+        {phase === 'H1' && running && (
+          <>
+            <button onClick={onPause} disabled={busy} className="btn-ghost">Pauza</button>
+            <button onClick={onEndH1} disabled={busy} className="btn-primary">
+              Kraj 1. poluvrijeme
+            </button>
+          </>
+        )}
+        {phase === 'H1' && !running && (
+          <>
+            <button onClick={onResume} disabled={busy} className="btn-primary">Nastavi</button>
+            <button onClick={onEndH1} disabled={busy} className="btn-ghost">
+              Kraj 1. poluvrijeme
+            </button>
+          </>
+        )}
+
+        {phase === 'HT' && (
+          <button onClick={onStartH2} disabled={busy} className="btn-primary col-span-2">
+            Pokreni 2. poluvrijeme
+          </button>
+        )}
+
+        {phase === 'H2' && running && (
+          <>
+            <button onClick={onPause} disabled={busy} className="btn-ghost">Pauza</button>
+            <button onClick={onEndMatch} disabled={busy} className="btn-red">
+              Završi utakmicu
+            </button>
+          </>
+        )}
+        {phase === 'H2' && !running && (
+          <>
+            <button onClick={onResume} disabled={busy} className="btn-primary">Nastavi</button>
+            <button onClick={onEndMatch} disabled={busy} className="btn-red">
+              Završi utakmicu
+            </button>
+          </>
+        )}
+
+        {phase === 'FT' && (
+          <div className="col-span-2 text-center text-sm text-black/45 py-2">
+            Sat zaustavljen.
+          </div>
+        )}
+
+        {phase !== 'pre' && (
+          <button onClick={onReset} disabled={busy} className="btn-ghost col-span-2 text-black/45">
+            Resetiraj sat
+          </button>
+        )}
+      </div>
+
+      {err && <div className="text-brand-red text-sm mt-3 text-center">{err}</div>}
+    </div>
   );
 }
 

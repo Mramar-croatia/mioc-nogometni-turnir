@@ -136,7 +136,7 @@ function PageHeader() {
       <h1 className="font-display text-6xl leading-none tracking-[0.04em] mt-2">
         MIOC turnir
       </h1>
-      <p className="text-black/55 mt-3">Sve bitno na jednom mjestu.</p>
+      <p className="text-black/55 mt-3">Podatci se ažuriraju u realnom vremenu.</p>
     </header>
   );
 }

@@ -5,7 +5,8 @@
       "Bash(cp .env.example .env)",
       "Bash(npm run:*)",
       "Bash(npx tsc:*)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(echo \"exit=$?\")"
     ]
   }
 }

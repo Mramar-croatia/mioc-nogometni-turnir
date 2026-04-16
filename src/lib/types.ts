@@ -2,6 +2,14 @@ export type Division = string;
 export type MatchStatus = 'scheduled' | 'live' | 'finished';
 export type Stage = 'R1' | 'WB' | 'LB' | 'F' | 'GF';
 export type Half = 'I' | 'II';
+export type MatchPhase = 'pre' | 'H1' | 'HT' | 'H2' | 'FT';
+
+export interface MatchClock {
+  phase: MatchPhase;
+  phaseStartedAt: number | null;
+  elapsedMsAtPhaseStart: number;
+  running: boolean;
+}
 
 export interface Player {
   name: string;
@@ -63,4 +71,5 @@ export interface Match {
   commentary?: string;
   mvpName?: string;
   mvpTeamId?: string;
+  clock?: MatchClock | null;
 }
