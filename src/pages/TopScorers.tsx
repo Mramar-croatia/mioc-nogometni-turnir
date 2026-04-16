@@ -133,14 +133,18 @@ export default function TopScorers() {
           </div>
 
           <div className="card p-2 sm:p-3">
-            {rows.map((r, i) => (
-              <ScorerRow
-                key={`${r.teamId}|${r.player}`}
-                row={r}
-                rank={i}
-                team={teamMap.get(r.teamId)}
-              />
-            ))}
+            {(() => {
+              const distinctGoals = Array.from(new Set(rows.map((r) => r.goals))).sort((a, b) => b - a);
+              const showRanks = distinctGoals.length > 1;
+              return rows.map((r) => (
+                <ScorerRow
+                  key={`${r.teamId}|${r.player}`}
+                  row={r}
+                  rank={showRanks ? distinctGoals.indexOf(r.goals) : -1}
+                  team={teamMap.get(r.teamId)}
+                />
+              ));
+            })()}
           </div>
         </section>
       )}
@@ -151,7 +155,8 @@ export default function TopScorers() {
 function ScorerRow({ row, rank, team }: { row: Row; rank: number; team?: Team }) {
   const hat = Math.max(0, ...row.perMatchCounts) >= 3;
   const perGame = row.matchesPlayed > 0 ? (row.goals / row.matchesPlayed).toFixed(2) : '—';
-  const podium = PODIUM[rank];
+  const showRank = rank >= 0;
+  const podium = showRank ? PODIUM[rank] : undefined;
   const teamColor = team?.color || undefined;
 
   return (
@@ -166,14 +171,16 @@ function ScorerRow({ row, rank, team }: { row: Row; rank: number; team?: Team })
         className="absolute left-0 top-3 bottom-3 w-[3px] rounded-full"
         style={{ background: teamColor ?? 'rgba(0,0,0,0.06)' }}
       />
-      <div
-        className={classNames(
-          'font-display text-2xl w-9 text-center shrink-0 pl-1',
-          podium ? podium.text : 'text-black/30'
-        )}
-      >
-        {rank + 1}
-      </div>
+      {showRank && (
+        <div
+          className={classNames(
+            'font-display text-2xl w-9 text-center shrink-0 pl-1',
+            podium ? podium.text : 'text-black/30'
+          )}
+        >
+          {rank + 1}
+        </div>
+      )}
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
           <span className="font-bold text-[15px] truncate">{row.player}</span>

@@ -17,7 +17,8 @@ export default function GoalTimeline({
       <div className="h-[3px] bg-[#edeef3] rounded relative">
         <div className="absolute left-1/2 -top-[3px] w-px h-[9px] bg-black/10" />
         {goals.map((g, i) => {
-          const pct = Math.min((g.minute / MATCH_LEN) * 100, 98);
+          const absMinute = (g.half === 'II' ? MATCH_LEN / 2 : 0) + g.minute;
+          const pct = Math.min((absMinute / MATCH_LEN) * 100, 98);
           const isHome = g.teamId === homeId;
           const color = isHome ? homeColor : awayColor;
           return (
