@@ -1,4 +1,4 @@
-export const DAY_NAMES_HR = ['Nedjelja', 'Ponedjeljak', 'Utorak', 'Srijeda', 'Cetvrtak', 'Petak', 'Subota'];
+export const DAY_NAMES_HR = ['Nedjelja', 'Ponedjeljak', 'Utorak', 'Srijeda', 'Četvrtak', 'Petak', 'Subota'];
 export const MONTHS_HR = ['sijecnja', 'veljace', 'ozujka', 'travnja', 'svibnja', 'lipnja', 'srpnja', 'kolovoza', 'rujna', 'listopada', 'studenoga', 'prosinca'];
 
 export function formatDateHr(iso: string): string {
@@ -31,7 +31,6 @@ export const STAGE_LABEL: Record<string, string> = {
   WB: 'Pobjednicka',
   LB: 'Porazena',
   F: 'Finale',
-  GF: 'Veliko finale',
 };
 
 export function compareMatchSchedule(
@@ -70,5 +69,5 @@ export function getDivisionKey(value: string | null | undefined): 'm' | 'z' {
 }
 
 export function getDivisionLabel(value: string | null | undefined): string {
-  return getDivisionKey(value) === 'm' ? 'Muski' : 'Zenski';
+  return getDivisionKey(value) === 'm' ? 'Muski' : 'Ženski';
 }

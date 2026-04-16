@@ -72,7 +72,7 @@ export default function Teams() {
 
       <Group title="Muski" teams={muski} isFollowed={isFollowed} toggle={toggle} accent="blue" />
       {zenske.length > 0 && (
-        <Group title="Zenski" teams={zenske} isFollowed={isFollowed} toggle={toggle} accent="red" />
+        <Group title="Ženski" teams={zenske} isFollowed={isFollowed} toggle={toggle} accent="red" />
       )}
     </div>
   );

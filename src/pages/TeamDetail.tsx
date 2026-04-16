@@ -131,7 +131,7 @@ export default function TeamDetail() {
 
       {stats && stats.upcoming.length > 0 && (
         <section className="space-y-3">
-          <h2 className="font-cond font-extrabold text-xs tracking-[0.18em] uppercase text-black/45">Sljedece utakmice</h2>
+          <h2 className="font-cond font-extrabold text-xs tracking-[0.18em] uppercase text-black/45">Sljedeće utakmice</h2>
           {stats.upcoming.map((m, i) => (
             <MatchCard key={m.id} match={m} home={teamMap.get(m.homeId)} away={teamMap.get(m.awayId)} index={i} compact />
           ))}

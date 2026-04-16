@@ -12,7 +12,6 @@ const STAGE_OPTIONS: { value: Stage; label: string }[] = [
   { value: 'WB', label: 'Pobjednička' },
   { value: 'LB', label: 'Poražena' },
   { value: 'F', label: 'Finale' },
-  { value: 'GF', label: 'Veliko finale' },
 ];
 
 export default function MatchCreate() {

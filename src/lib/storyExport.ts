@@ -229,7 +229,7 @@ export async function downloadMatchStory(match: Match, home?: Team, away?: Team)
 
   ctx.fillStyle = 'rgba(255,255,255,0.72)';
   ctx.font = '700 22px Arial, sans-serif';
-  ctx.fillText('XV. GIMNAZIJA ZAGREB', 540, 1780);
+  ctx.fillText('XV. GIMNAZIJA, ZAGREB', 540, 1780);
   ctx.fillStyle = 'rgba(255,255,255,0.42)';
   ctx.font = '600 18px Arial, sans-serif';
 

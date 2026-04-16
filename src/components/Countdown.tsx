@@ -60,7 +60,7 @@ export default function Countdown({ match, home, away, live }: Props) {
               <span className="text-brand-red">Uzivo</span>
             </>
           ) : (
-            <>Sljedeca utakmica</>
+            <>Sljedeća utakmica</>
           )}
         </div>
         <div className="flex items-center justify-center gap-3">

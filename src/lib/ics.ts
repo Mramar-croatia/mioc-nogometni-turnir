@@ -41,7 +41,7 @@ export function buildIcs(
       `DTSTART:${toIcsDate(m.date, m.time)}`,
       `DTEND:${addMinutes(m.date, m.time, m.durationMin || 20)}`,
       `SUMMARY:${escapeText(`${home} vs ${away}`)}`,
-      `LOCATION:${escapeText('XV. gimnazija Zagreb')}`,
+      `LOCATION:${escapeText('XV. gimnazija, Zagreb')}`,
       'END:VEVENT',
     );
   }

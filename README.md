@@ -129,7 +129,7 @@ Reci im da promijene lozinku nakon prve prijave (Firebase to traži kroz Auth).
 
 - **Otvori utakmicu u adminu** → unesi rezultat → klikni status **Završeno** → odaberi **Pobjednika** → **Spremi**.
 - **Dodaj gol** → odaberi ekipu → unesi ime, minutu, poluvrijeme → **Dodaj gol**. Timeline na javnoj stranici se odmah ažurira.
-- **II. faza:** kad I. kolo završi, idi na **Ladder** u adminu → dodaj utakmice double-elimination ladera ručno (Pobjednička / Poražena / Finale / Veliko finale) i po potrebi im upiši oznaku kruga (`WB-SF1`, `LB-R2`, ...).
+- **II. faza:** kad I. kolo završi, idi na **Ladder** u adminu → dodaj utakmice double-elimination ladera ručno (Pobjednička / Poražena / Finale) i po potrebi im upiši oznaku kruga (`WB-SF1`, `LB-R2`, ...).
 
 ## Struktura
 

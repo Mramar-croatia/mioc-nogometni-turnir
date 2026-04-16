@@ -61,7 +61,7 @@ export default function Matches() {
       <div className="flex flex-wrap gap-2">
         {([
           ['all', 'Sve'],
-          ['scheduled', 'Sljedece'],
+          ['scheduled', 'Sljedeće'],
           ['finished', 'Odigrane'],
         ] as [Filter, string][]).map(([k, label]) => (
           <button
@@ -122,7 +122,7 @@ function PageHeader() {
       <h1 className="font-display text-5xl leading-none tracking-[0.04em] mt-2">
         Utakmice
       </h1>
-      <p className="text-black/55 mt-3">Sve utakmice grupirane po danu.</p>
+      <p className="text-black/55 mt-3">Raspored utakmica u turniru.</p>
     </header>
   );
 }

@@ -11,7 +11,6 @@ const STAGE_OPTIONS: { value: Exclude<Stage, 'R1'>; label: string; placeholder: 
   { value: 'WB', label: 'Pobjednička', placeholder: 'npr. WB-SF1' },
   { value: 'LB', label: 'Poražena', placeholder: 'npr. LB-R2' },
   { value: 'F', label: 'Finale', placeholder: 'npr. F1' },
-  { value: 'GF', label: 'Veliko finale', placeholder: 'npr. GF1' },
 ];
 
 export default function BracketAdmin() {

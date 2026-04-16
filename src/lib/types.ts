@@ -1,6 +1,6 @@
 export type Division = string;
 export type MatchStatus = 'scheduled' | 'live' | 'finished';
-export type Stage = 'R1' | 'WB' | 'LB' | 'F' | 'GF';
+export type Stage = 'R1' | 'WB' | 'LB' | 'F';
 export type Half = 'I' | 'II';
 export type MatchPhase = 'pre' | 'H1' | 'HT' | 'H2' | 'FT';
 

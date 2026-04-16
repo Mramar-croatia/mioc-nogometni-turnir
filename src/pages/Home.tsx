@@ -82,7 +82,7 @@ export default function Home() {
               accent="blue"
             />
             <Stat
-              label="Golova"
+              label="Golova do sad"
               value={stats.goalsCount ?? '—'}
               accent="red"
             />
@@ -119,7 +119,7 @@ export default function Home() {
       )}
 
       {upcoming.length > 0 && (
-        <Section title="Sljedece utakmice" link={{ to: '/utakmice', label: 'Raspored' }}>
+        <Section title="Sljedeće utakmice" link={{ to: '/utakmice', label: 'Raspored' }}>
           <CompactList list={upcoming} teamMap={teamMap} />
         </Section>
       )}

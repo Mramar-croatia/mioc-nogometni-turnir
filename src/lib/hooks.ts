@@ -4,10 +4,21 @@ import {
 } from 'firebase/firestore';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { auth, db } from './firebase';
-import type { Team, Match, Goal, Card } from './types';
+import type { Team, Match, Goal, Card, Stage } from './types';
 
 function withId<T>(id: string, data: unknown): T {
   return { id, ...(data as object) } as T;
+}
+
+function normalizeStage(stage: unknown): Stage {
+  if (stage === 'GF') return 'F';
+  if (stage === 'R1' || stage === 'WB' || stage === 'LB' || stage === 'F') return stage;
+  return 'R1';
+}
+
+function withNormalizedMatch(id: string, data: unknown): Match {
+  const match = withId<Match>(id, data);
+  return { ...match, stage: normalizeStage((data as { stage?: unknown }).stage) };
 }
 
 export function useTeams() {
@@ -43,7 +54,7 @@ export function useMatches() {
     return onSnapshot(
       collection(db, 'matches'),
       (snap) => {
-        const list: Match[] = snap.docs.map((d) => withId<Match>(d.id, d.data()));
+        const list: Match[] = snap.docs.map((d) => withNormalizedMatch(d.id, d.data()));
         list.sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time));
         setMatches(list);
       },
@@ -64,7 +75,7 @@ export function useMatch(id: string | undefined) {
       return;
     }
     return onSnapshot(doc(db, 'matches', id), (d) => {
-      setMatch(d.exists() ? withId<Match>(d.id, d.data()) : null);
+      setMatch(d.exists() ? withNormalizedMatch(d.id, d.data()) : null);
     });
   }, [id]);
   return match;

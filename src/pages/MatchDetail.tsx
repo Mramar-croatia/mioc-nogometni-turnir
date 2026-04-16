@@ -1,10 +1,8 @@
-import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useMatch, useGoals, useCards, useTeam, useTeams } from '../lib/hooks';
 import MatchCard from '../components/MatchCard';
 import Loading from '../components/Loading';
 import { classNames, formatDateHr, STAGE_LABEL } from '../lib/utils';
-import { downloadMatchStory } from '../lib/storyExport';
 
 export default function MatchDetail() {
   const { id } = useParams();
@@ -14,43 +12,10 @@ export default function MatchDetail() {
   const home = useTeam(match?.homeId);
   const away = useTeam(match?.awayId);
   const teams = useTeams();
-  const [copied, setCopied] = useState(false);
-  const [exporting, setExporting] = useState(false);
 
   if (match === undefined) return <Loading />;
   if (match === null) return <div className="card p-8 text-center text-black/45">Utakmica nije pronadena.</div>;
   const currentMatch = match;
-
-  async function share() {
-    const homeCode = home?.code ?? '?';
-    const awayCode = away?.code ?? '?';
-    const scoreText = currentMatch.status !== 'scheduled'
-      ? `${homeCode} ${currentMatch.homeScore} : ${currentMatch.awayScore} ${awayCode}`
-      : `${homeCode} vs ${awayCode}`;
-    const text = `${scoreText} - MIOC Turnir`;
-    const url = window.location.href;
-    try {
-      if (navigator.share) {
-        await navigator.share({ title: 'MIOC Turnir', text, url });
-        return;
-      }
-    } catch {}
-    try {
-      await navigator.clipboard.writeText(`${text}\n${url}`);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1800);
-    } catch {}
-  }
-
-  async function exportResult() {
-    if (exporting) return;
-    setExporting(true);
-    try {
-      await downloadMatchStory(currentMatch, home ?? undefined, away ?? undefined);
-    } finally {
-      setExporting(false);
-    }
-  }
 
   const mvpTeamCode = currentMatch.mvpTeamId === currentMatch.homeId ? home?.code
     : currentMatch.mvpTeamId === currentMatch.awayId ? away?.code : null;
@@ -64,18 +29,8 @@ export default function MatchDetail() {
       <div className="flex flex-wrap items-center gap-2">
         <span className="pill">{STAGE_LABEL[currentMatch.stage]}</span>
         <span className="text-xs text-black/40 font-cond uppercase tracking-[0.16em]">
-          {formatDateHr(currentMatch.date)} / {currentMatch.time}
+          {formatDateHr(currentMatch.date)}
         </span>
-        <div className="ml-auto flex items-center gap-2">
-          <button onClick={share} className="pill hover:border-black/15" title="Podijeli">
-            {copied ? 'Kopirano' : 'Podijeli'}
-          </button>
-          {currentMatch.status === 'finished' && (
-            <button onClick={exportResult} className="pill hover:border-black/15" title="Izvezi story PNG">
-              {exporting ? 'Priprema...' : 'Izvezi rezultat'}
-            </button>
-          )}
-        </div>
       </div>
 
       <MatchCard
@@ -141,4 +96,3 @@ export default function MatchDetail() {
     </div>
   );
 }
-

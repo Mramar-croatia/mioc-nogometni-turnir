@@ -6,7 +6,7 @@ const NAV = [
   { to: '/', label: 'Pregled', icon: HomeIcon, end: true },
   { to: '/utakmice', label: 'Raspored', icon: BallIcon },
   { to: '/ekipe', label: 'Ekipe', icon: TeamIcon },
-  { to: '/ladder', label: 'Zavrsnica', icon: TrophyIcon },
+  { to: '/ladder', label: 'Faze', icon: TrophyIcon },
   { to: '/strijelci', label: 'Strijelci', icon: StarIcon },
 ];
 
@@ -58,8 +58,8 @@ export default function Layout() {
 
       <footer className="max-w-5xl mx-auto w-full px-4 py-8 pb-24 sm:pb-8 text-sm text-black/35">
         <div className="border-t border-black/8 pt-4 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-          <span>XV. gimnazija Zagreb</span>
-          <span className="font-cond uppercase tracking-[0.16em]">Vijece ucenika</span>
+          <span>XV. gimnazija, Zagreb</span>
+          <span className="font-cond uppercase tracking-[0.16em]">Vijeće ucenika</span>
         </div>
       </footer>
 

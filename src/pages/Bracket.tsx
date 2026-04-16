@@ -16,32 +16,26 @@ const STAGES: Array<{
   {
     stage: 'R1',
     title: '1. kolo',
-    subtitle: 'Ulaz u zavrsnicu',
+    subtitle: 'Ulaz u završnicu',
     empty: 'Utakmice prvog kola jos nisu dodane.',
   },
   {
     stage: 'WB',
-    title: 'Pobjednicka grana',
+    title: 'Pobjednička grana',
     subtitle: 'Put prema finalu bez poraza',
-    empty: 'Jos nema utakmica pobjednicke grane.',
+    empty: 'Jos nema utakmica pobjedničke grane.',
   },
   {
     stage: 'LB',
-    title: 'Porazena grana',
-    subtitle: 'Druga sansa za ulazak u finale',
-    empty: 'Jos nema utakmica porazene grane.',
+    title: 'Poražena grana',
+    subtitle: 'Druga šansa za ulazak u finale',
+    empty: 'Jos nema utakmica poražene grane.',
   },
   {
     stage: 'F',
     title: 'Finale',
-    subtitle: 'Pobjednik grana ulazi u zavrsni duel',
+    subtitle: 'Pobjednik grana ulazi u završni duel',
     empty: 'Finale jos nije dodano.',
-  },
-  {
-    stage: 'GF',
-    title: 'Veliko finale',
-    subtitle: 'Posljednja utakmica turnira',
-    empty: 'Veliko finale jos nije dodano.',
   },
 ];
 
@@ -53,7 +47,7 @@ export default function Bracket() {
     return (
       <div className="space-y-6">
         <div>
-          <div className="font-cond text-xs font-bold uppercase tracking-[0.18em] text-black/45">Zavrsnica</div>
+          <div className="font-cond text-xs font-bold uppercase tracking-[0.18em] text-black/45">Struktura</div>
           <h1 className="font-display text-5xl leading-none tracking-[0.04em] mt-2">Pregled faza</h1>
         </div>
         <SkeletonList count={4} />
@@ -82,7 +76,7 @@ export default function Bracket() {
     <div className="space-y-8">
       <header className="space-y-4">
         <div>
-          <div className="font-cond text-xs font-bold uppercase tracking-[0.18em] text-black/45">Zavrsnica</div>
+          <div className="font-cond text-xs font-bold uppercase tracking-[0.18em] text-black/45">Struktura</div>
           <h1 className="font-display text-5xl leading-none tracking-[0.04em] mt-2">Pregled faza</h1>
         </div>
 
@@ -97,11 +91,11 @@ export default function Bracket() {
         <div className="flex items-center justify-between gap-3">
           <h2 className="font-cond font-extrabold text-xs tracking-[0.18em] uppercase text-black/50">Tok turnira</h2>
           <div className="text-xs text-black/35 font-cond uppercase tracking-[0.16em]">
-            Od pocetka prema finalu
+            Od početka prema finalu
           </div>
         </div>
 
-        <div className="grid gap-4 xl:grid-cols-5 lg:grid-cols-3 sm:grid-cols-2">
+        <div className="grid gap-4 lg:grid-cols-4 sm:grid-cols-2">
           {STAGES.map((item, index) => {
             const list = stageMap.get(item.stage) ?? [];
             return (
@@ -126,7 +120,7 @@ export default function Bracket() {
 
 function pickSpotlightMatch(matches: Match[]): Match | null {
   const sorted = [...matches].sort(compareMatchSchedule);
-  const finals = sorted.filter((match) => match.stage === 'GF' || match.stage === 'F');
+  const finals = sorted.filter((match) => match.stage === 'F');
   const pool = finals.length > 0 ? finals : sorted;
 
   return (

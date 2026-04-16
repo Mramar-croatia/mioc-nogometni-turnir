@@ -92,7 +92,7 @@ export default function TopScorers() {
           {([
             ['all', 'Svi'],
             ['m', 'Muski'],
-            ['z', 'Zenski'],
+            ['z', 'Ženski'],
           ] as [DivFilter, string][]).map(([k, label]) => (
             <button
               key={k}
