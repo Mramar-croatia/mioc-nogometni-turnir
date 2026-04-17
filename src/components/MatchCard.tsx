@@ -101,7 +101,7 @@ export default function MatchCard({ match, home, away, goals = [], index = 0, co
             `linear-gradient(90deg, ${homeColor} 0%, ${homeColor} 48%, transparent 48%, transparent 52%, ${awayColor} 52%, ${awayColor} 100%)`,
         }}
       />
-      <div className={classNames('px-5', compact ? 'py-3' : 'py-4')}>
+      <div className={classNames('px-5', compact ? 'py-3' : 'py-5')}>
         <div className="flex justify-between items-center mb-3">
           <span className="font-cond text-[13px] font-bold text-black/25 tracking-wider">
             {match.time}
@@ -125,7 +125,7 @@ export default function MatchCard({ match, home, away, goals = [], index = 0, co
           </span>
         </div>
 
-        <div className="flex items-center justify-center mb-1">
+        <div className={classNames('flex items-center justify-center', compact ? 'mb-1' : 'mb-4')}>
           <div className="flex-1 flex items-center justify-end pr-3.5 min-w-0">
             <div
               className="font-display text-[42px] leading-none tracking-wide transition-colors truncate"
