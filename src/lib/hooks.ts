@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
-  collection, doc, onSnapshot, orderBy, query, getDoc, collectionGroup,
+  collection, doc, onSnapshot, orderBy, query, getDoc,
 } from 'firebase/firestore';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { auth, db } from './firebase';
 import type { Team, Match, Goal, Card, Stage } from './types';
+import { useTournamentData } from './TournamentData';
 
 function withId<T>(id: string, data: unknown): T {
   return { id, ...(data as object) } as T;
@@ -22,49 +23,20 @@ function withNormalizedMatch(id: string, data: unknown): Match {
 }
 
 export function useTeams() {
-  const [teams, setTeams] = useState<Team[] | null>(null);
-  useEffect(() => {
-    const q = query(collection(db, 'teams'));
-    return onSnapshot(q, (snap) => {
-      const list: Team[] = snap.docs.map((d) => withId<Team>(d.id, d.data()));
-      list.sort((a, b) => a.code.localeCompare(b.code, 'hr'));
-      setTeams(list);
-    }, () => setTeams([]));
-  }, []);
-  return teams;
+  return useTournamentData().teams;
 }
 
 export function useTeam(id: string | undefined) {
-  const [team, setTeam] = useState<Team | null | undefined>(undefined);
-  useEffect(() => {
-    if (!id) {
-      setTeam(undefined);
-      return;
-    }
-    return onSnapshot(doc(db, 'teams', id), (d) => {
-      setTeam(d.exists() ? withId<Team>(d.id, d.data()) : null);
-    });
-  }, [id]);
-  return team;
+  const { teams } = useTournamentData();
+  return useMemo<Team | null | undefined>(() => {
+    if (!id) return undefined;
+    if (teams === null) return undefined;
+    return teams.find((t) => t.id === id) ?? null;
+  }, [teams, id]);
 }
 
 export function useMatches() {
-  const [matches, setMatches] = useState<Match[] | null>(null);
-  useEffect(() => {
-    return onSnapshot(
-      collection(db, 'matches'),
-      (snap) => {
-        const list: Match[] = snap.docs.map((d) => withNormalizedMatch(d.id, d.data()));
-        list.sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time));
-        setMatches(list);
-      },
-      (err) => {
-        console.error('useMatches error:', err);
-        setMatches([]);
-      }
-    );
-  }, []);
-  return matches;
+  return useTournamentData().matches;
 }
 
 export function useMatch(id: string | undefined) {
@@ -111,25 +83,8 @@ export function useCards(matchId: string | undefined) {
   return cards;
 }
 
-// Aggregates every goal across every match in realtime.
-export function useAllGoals(matches: Match[] | null) {
-  const [goals, setGoals] = useState<(Goal & { matchId: string })[] | null>(null);
-  useEffect(() => {
-    if (matches === null) return;
-    if (matches.length === 0) { setGoals([]); return; }
-    return onSnapshot(
-      collectionGroup(db, 'goals'),
-      (snap) => {
-        const list = snap.docs.map((d) => ({
-          ...withId<Goal>(d.id, d.data()),
-          matchId: d.ref.parent.parent?.id ?? '',
-        }));
-        setGoals(list);
-      },
-      () => setGoals([])
-    );
-  }, [matches]);
-  return goals;
+export function useAllGoals(_matches?: Match[] | null) {
+  return useTournamentData().allGoals;
 }
 
 export function useAuthUser() {

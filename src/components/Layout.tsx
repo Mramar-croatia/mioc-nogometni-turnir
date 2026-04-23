@@ -1,6 +1,7 @@
 import siteLogo from '../../logo.jpeg';
 import { NavLink, Outlet } from 'react-router-dom';
 import { classNames } from '../lib/utils';
+import { useTournamentData } from '../lib/TournamentData';
 
 const NAV = [
   { to: '/', label: 'Pregled', icon: HomeIcon, end: true },
@@ -11,6 +12,7 @@ const NAV = [
 ];
 
 export default function Layout() {
+  const { refresh, refreshing } = useTournamentData();
   return (
     <div className="min-h-screen flex flex-col">
       <header className="sticky top-0 z-30 border-b border-black/8 bg-white/90 backdrop-blur">
@@ -23,13 +25,28 @@ export default function Layout() {
               2026
             </div>
           </NavLink>
-          <NavLink to="/" className="shrink-0">
-            <img
-              src={siteLogo}
-              alt="MIOC Turnir logo"
-              className="h-14 w-14 sm:h-16 sm:w-16 object-cover rounded-2xl border border-black/8 shadow-card"
-            />
-          </NavLink>
+          <div className="flex items-center gap-3 shrink-0">
+            <button
+              type="button"
+              onClick={() => refresh()}
+              disabled={refreshing}
+              aria-label="Osvježi podatke"
+              title="Osvježi podatke"
+              className={classNames(
+                'h-10 w-10 rounded-xl border border-black/8 bg-white text-black/60 hover:text-brand-dark hover:border-black/15 transition flex items-center justify-center',
+                refreshing && 'opacity-60 cursor-wait'
+              )}
+            >
+              <RefreshIcon spinning={refreshing} />
+            </button>
+            <NavLink to="/" className="shrink-0">
+              <img
+                src={siteLogo}
+                alt="MIOC Turnir logo"
+                className="h-14 w-14 sm:h-16 sm:w-16 object-cover rounded-2xl border border-black/8 shadow-card"
+              />
+            </NavLink>
+          </div>
         </div>
         <nav className="hidden sm:flex max-w-5xl mx-auto px-4 pb-3 gap-2 overflow-x-auto">
           {NAV.map((n) => (
@@ -131,6 +148,25 @@ function StarIcon() {
   return (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <polygon points="12 3 14.8 9.3 21.6 10 16.5 14.6 18 21 12 17.6 6 21 7.5 14.6 2.4 10 9.2 9.3" />
+    </svg>
+  );
+}
+
+function RefreshIcon({ spinning }: { spinning?: boolean }) {
+  return (
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={spinning ? 'animate-spin' : ''}
+    >
+      <path d="M21 12a9 9 0 1 1-3.5-7.1" />
+      <polyline points="21 3 21 9 15 9" />
     </svg>
   );
 }

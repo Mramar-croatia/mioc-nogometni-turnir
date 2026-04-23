@@ -692,18 +692,19 @@ function MatchClockCard({ matchId, match }: { matchId: string; match: Match }) {
     }
   }
 
-  const clock = getClock(match);
-  const now = Date.now();
-
+  // Read Date.now() and the current clock inside each handler so pause/resume
+  // use the click-time timestamp, not a stale one captured at render time.
+  // (While paused, the component stops re-rendering, so a render-time `now`
+  //  would lose the entire pause duration on resume.)
   const onStartH1 = () =>
-    apply({ clock: startFirstHalf(now), status: 'live' as MatchStatus });
-  const onPause = () => apply({ clock: pauseClock(clock, now) });
-  const onResume = () => apply({ clock: resumeClock(clock, now) });
-  const onEndH1 = () => apply({ clock: endFirstHalf(now) });
-  const onStartH2 = () => apply({ clock: startSecondHalf(now) });
+    apply({ clock: startFirstHalf(Date.now()), status: 'live' as MatchStatus });
+  const onPause = () => apply({ clock: pauseClock(getClock(match), Date.now()) });
+  const onResume = () => apply({ clock: resumeClock(getClock(match), Date.now()) });
+  const onEndH1 = () => apply({ clock: endFirstHalf(Date.now()) });
+  const onStartH2 = () => apply({ clock: startSecondHalf(Date.now()) });
   const onEndMatch = () =>
     apply(
-      { clock: endMatchClock(clock, now), status: 'finished' as MatchStatus },
+      { clock: endMatchClock(getClock(match), Date.now()), status: 'finished' as MatchStatus },
       'Završiti utakmicu?',
     );
   const onReset = () =>

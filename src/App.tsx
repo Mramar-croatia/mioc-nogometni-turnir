@@ -2,6 +2,7 @@ import { Suspense, lazy } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './components/Layout';
 import Loading from './components/Loading';
+import { TournamentDataProvider } from './lib/TournamentData';
 
 const Home = lazy(() => import('./pages/Home'));
 const Matches = lazy(() => import('./pages/Matches'));
@@ -23,6 +24,7 @@ const AdminTeamEdit = lazy(() => import('./pages/admin/TeamEdit'));
 export default function App() {
   return (
     <Suspense fallback={<Loading />}>
+      <TournamentDataProvider>
       <Routes>
         <Route element={<Layout />}>
           <Route index element={<Home />} />
@@ -48,6 +50,7 @@ export default function App() {
 
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+      </TournamentDataProvider>
     </Suspense>
   );
 }
