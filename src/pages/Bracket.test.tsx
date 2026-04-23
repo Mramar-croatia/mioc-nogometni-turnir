@@ -1,5 +1,4 @@
 import { render, screen } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import Bracket from './Bracket';
@@ -45,6 +44,7 @@ const matches: Match[] = [
     id: 'm1',
     stage: 'R1',
     bracketSlot: 'R1-1',
+    matchNumber: 'U1',
     date: '2026-04-25',
     time: '10:00',
     homeId: 't1',
@@ -58,31 +58,13 @@ const matches: Match[] = [
   },
 ];
 
-function setScreenWidth(isMobile: boolean) {
-  Object.defineProperty(window, 'matchMedia', {
-    writable: true,
-    value: vi.fn().mockImplementation((query: string) => ({
-      matches: isMobile && query === '(max-width: 639px)',
-      media: query,
-      onchange: null,
-      addListener: vi.fn(),
-      removeListener: vi.fn(),
-      addEventListener: vi.fn(),
-      removeEventListener: vi.fn(),
-      dispatchEvent: vi.fn(),
-    })),
-  });
-}
-
-describe('Bracket mobile collapse', () => {
+describe('Bracket', () => {
   beforeEach(() => {
     mockUseMatches.mockReturnValue(matches);
     mockUseTeams.mockReturnValue(teams);
   });
 
   it('shows a highlighted update that the tournament moved into drugo kolo', () => {
-    setScreenWidth(false);
-
     render(
       <MemoryRouter>
         <Bracket />
@@ -92,24 +74,31 @@ describe('Bracket mobile collapse', () => {
     expect(screen.getByText(/turnir je sada u drugom krugu/i)).toBeInTheDocument();
   });
 
-  it('keeps prvo kolo collapsed by default on mobile and expands on tap', async () => {
-    setScreenWidth(true);
-    const user = userEvent.setup();
-
+  it('renders the three double-elimination branches as tabs', () => {
     render(
       <MemoryRouter>
         <Bracket />
       </MemoryRouter>
     );
 
-    const toggle = screen.getByRole('button', { name: /1\. kolo/i });
+    const nav = screen.getByRole('navigation', { name: /grane turnira/i });
+    expect(nav).toBeInTheDocument();
+    expect(screen.getAllByText(/pobjednička grana/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/gubitnička grana/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/veliko finale/i).length).toBeGreaterThan(0);
+  });
 
-    expect(toggle).toHaveAttribute('aria-expanded', 'false');
-    expect(screen.queryByText('R1-1')).not.toBeInTheDocument();
+  it('places a U-numbered match inside the planned bracket rather than the fallback bucket', () => {
+    render(
+      <MemoryRouter>
+        <Bracket />
+      </MemoryRouter>
+    );
 
-    await user.click(toggle);
-
-    expect(toggle).toHaveAttribute('aria-expanded', 'true');
-    expect(screen.getByText('R1-1')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /utakmica 1\b/i })).toHaveAttribute(
+      'href',
+      '/utakmice/m1'
+    );
+    expect(screen.queryByText(/ostale utakmice/i)).not.toBeInTheDocument();
   });
 });
