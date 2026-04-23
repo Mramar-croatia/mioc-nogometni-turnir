@@ -58,6 +58,7 @@ export interface Match {
   id: string;
   stage: Stage;
   bracketSlot?: string | null;
+  matchNumber?: string | null;
   date: string;
   time: string;
   label?: string;

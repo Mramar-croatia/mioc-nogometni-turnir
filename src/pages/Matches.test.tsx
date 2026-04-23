@@ -164,4 +164,21 @@ describe('Matches filters', () => {
     expect(screen.queryByText('WBA')).not.toBeInTheDocument();
     expect(screen.queryByText('LBA')).not.toBeInTheDocument();
   });
+
+  it('shows the match number badge in the schedule for second-round matches', () => {
+    mockUseMatches.mockReturnValue([
+      {
+        ...matches[1],
+        matchNumber: 'U1',
+      },
+    ]);
+
+    render(
+      <MemoryRouter>
+        <Matches />
+      </MemoryRouter>
+    );
+
+    expect(screen.getByText('U1')).toBeInTheDocument();
+  });
 });

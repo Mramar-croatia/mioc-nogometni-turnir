@@ -27,6 +27,7 @@ export default function MatchRow({ match, home, away, showDate }: Props) {
   const hasPen = !!match.penalties;
   const homeWinner = completed && match.winnerId === match.homeId;
   const awayWinner = completed && match.winnerId === match.awayId;
+  const hasMatchNumber = !!match.matchNumber?.trim();
 
   return (
     <Link
@@ -83,6 +84,11 @@ export default function MatchRow({ match, home, away, showDate }: Props) {
         >
           {away?.code ?? '?'}
         </div>
+        {hasMatchNumber && (
+          <span className="rounded-full bg-brand-blue/10 px-2 py-[3px] text-[10px] font-bold uppercase tracking-[0.08em] text-brand-blue shrink-0">
+            {match.matchNumber}
+          </span>
+        )}
       </div>
     </Link>
   );

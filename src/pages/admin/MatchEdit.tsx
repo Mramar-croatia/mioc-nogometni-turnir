@@ -35,6 +35,7 @@ export default function MatchEdit() {
   const [awayScore, setAwayScore] = useState(0);
   const [date, setDate] = useState('');
   const [time, setTime] = useState('');
+  const [matchNumber, setMatchNumber] = useState('');
   const [status, setStatus] = useState<MatchStatus>('scheduled');
   const [penaltiesOn, setPenaltiesOn] = useState(false);
   const [penHome, setPenHome] = useState(0);
@@ -53,6 +54,7 @@ export default function MatchEdit() {
     setAwayScore(match.awayScore ?? 0);
     setDate(match.date ?? '');
     setTime(match.time ?? '');
+    setMatchNumber(match.matchNumber ?? '');
     setStatus(match.status);
     setPenaltiesOn(!!match.penalties);
     setPenHome(match.penalties?.home ?? 0);
@@ -132,6 +134,7 @@ export default function MatchEdit() {
       await updateDoc(doc(db, 'matches', id), {
         date,
         time,
+        matchNumber: matchNumber.trim() || null,
         homeScore,
         awayScore,
         status,
@@ -227,6 +230,22 @@ export default function MatchEdit() {
             />
           </div>
         </div>
+
+        {match.stage !== 'R1' && (
+          <div className="mb-4">
+            <label htmlFor="match-number" className="block font-cond text-xs uppercase tracking-widest text-black/40 mb-1 text-center">
+              Broj utakmice
+            </label>
+            <input
+              id="match-number"
+              aria-label="Broj utakmice"
+              className="input text-center"
+              value={matchNumber}
+              onChange={(e) => { touchForm(); setMatchNumber(e.target.value); }}
+              placeholder="npr. U1"
+            />
+          </div>
+        )}
 
         <div className="flex items-center gap-3 justify-center mb-4">
           <ScoreInput label={home?.code ?? 'Domaći'} value={homeScore} onChange={(value) => { touchForm(); setHomeScore(value); }} />

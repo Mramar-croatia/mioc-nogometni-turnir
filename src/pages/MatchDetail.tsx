@@ -28,6 +28,7 @@ export default function MatchDetail() {
 
       <div className="flex flex-wrap items-center gap-2">
         <span className="pill">{STAGE_LABEL[currentMatch.stage]}</span>
+        {currentMatch.matchNumber && <span className="pill">{currentMatch.matchNumber}</span>}
         <span className="text-xs text-black/40 font-cond uppercase tracking-[0.16em]">
           {formatDateHr(currentMatch.date)}
         </span>
