@@ -3,6 +3,7 @@ export type MatchStatus = 'scheduled' | 'live' | 'finished';
 export type Stage = 'R1' | 'WB' | 'LB' | 'F';
 export type Half = 'I' | 'II';
 export type MatchPhase = 'pre' | 'H1' | 'HT' | 'H2' | 'FT';
+export type TeamEliminationOverride = 'auto' | 'active' | 'eliminated';
 
 export interface MatchClock {
   phase: MatchPhase;
@@ -27,6 +28,7 @@ export interface Team {
   contactEmail?: string;
   playersCount: number;
   players: Player[];
+  eliminationOverride?: TeamEliminationOverride | null;
   color?: string | null;
   crestUrl?: string | null;
 }

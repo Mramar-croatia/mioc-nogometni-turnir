@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { addDoc, collection, doc, setDoc } from 'firebase/firestore';
-import { db } from '../../lib/firebase';
-import { useTeam } from '../../lib/hooks';
+import TeamEliminationBadge from '../../components/TeamEliminationBadge';
 import Loading from '../../components/Loading';
-import type { Division, Player } from '../../lib/types';
+import { db } from '../../lib/firebase';
+import { useMatches, useTeam } from '../../lib/hooks';
+import { getTeamEliminationState } from '../../lib/teamElimination';
+import type { Division, Player, TeamEliminationOverride } from '../../lib/types';
 import { classNames } from '../../lib/utils';
 
 const EMPTY: {
@@ -17,6 +19,7 @@ const EMPTY: {
   contactEmail: string;
   players: Player[];
   color: string;
+  eliminationOverride: TeamEliminationOverride;
 } = {
   code: '',
   displayName: '',
@@ -27,6 +30,7 @@ const EMPTY: {
   contactEmail: '',
   players: [],
   color: '',
+  eliminationOverride: 'auto',
 };
 
 const COLOR_PRESETS = [
@@ -38,6 +42,7 @@ export default function TeamEdit() {
   const { id } = useParams();
   const isNew = !id;
   const existing = useTeam(isNew ? undefined : id);
+  const matches = useMatches();
   const nav = useNavigate();
 
   const [form, setForm] = useState(EMPTY);
@@ -57,11 +62,14 @@ export default function TeamEdit() {
       contactEmail: existing.contactEmail ?? '',
       players: existing.players ?? [],
       color: existing.color ?? '',
+      eliminationOverride: existing.eliminationOverride ?? 'auto',
     });
   }, [existing, isNew]);
 
   if (!isNew && existing === undefined) return <Loading />;
   if (!isNew && existing === null) return <div className="text-center py-10">Ekipa nije pronađena.</div>;
+
+  const eliminationState = getTeamEliminationState(id ?? 'new-team', matches ?? [], form.eliminationOverride);
 
   function update<K extends keyof typeof form>(key: K, value: (typeof form)[K]) {
     setForm((f) => ({ ...f, [key]: value }));
@@ -100,6 +108,7 @@ export default function TeamEdit() {
         contactEmail: form.contactEmail.trim() || null,
         playersCount: form.players.length,
         players: form.players,
+        eliminationOverride: form.eliminationOverride,
         color: form.color || null,
         crestUrl: existing?.crestUrl ?? null,
       };
@@ -179,6 +188,38 @@ export default function TeamEdit() {
 
         <div><Label>Kapetan (ime)</Label><input className="input" value={form.captain} onChange={(e) => update('captain', e.target.value)} /></div>
         <div><Label>Kontakt email</Label><input type="email" className="input" value={form.contactEmail} onChange={(e) => update('contactEmail', e.target.value)} /></div>
+
+        <div>
+          <Label>Status ekipe</Label>
+          <div className="space-y-3 rounded-2xl border border-black/8 bg-black/[0.02] p-4">
+            <div className="flex flex-wrap gap-2">
+              {[
+                ['auto', 'Automatski'],
+                ['eliminated', 'Označi kao ispalu'],
+                ['active', 'Označi kao aktivnu'],
+              ].map(([value, label]) => (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => update('eliminationOverride', value as TeamEliminationOverride)}
+                  className={classNames(
+                    'pill',
+                    form.eliminationOverride === value ? 'bg-brand-dark text-white' : 'bg-black/5 text-black/55'
+                  )}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+            <div className="text-sm text-black/55">
+              Automatski status trenutno: <span className="font-semibold text-black/75">{eliminationState.autoEliminated ? 'Ispala' : 'Aktivna'}</span>
+            </div>
+            <div className="text-sm text-black/55">
+              Trenutni prikaz: <span className="font-semibold text-black/75">{eliminationState.effectiveEliminated ? 'Ispala' : 'Aktivna'}</span>
+            </div>
+            <TeamEliminationBadge state={eliminationState} teamCode={form.code || undefined} variant="detail" showManualNote />
+          </div>
+        </div>
 
         <div>
           <Label>Igrači ({form.players.length})</Label>

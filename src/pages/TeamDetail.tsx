@@ -4,7 +4,9 @@ import { useAllGoals, useMatches, useTeam, useTeams } from '../lib/hooks';
 import { useFollowedTeams } from '../lib/favorites';
 import { buildResultsCsv, downloadCsv } from '../lib/resultsExport';
 import MatchCard from '../components/MatchCard';
+import TeamEliminationBadge from '../components/TeamEliminationBadge';
 import Loading from '../components/Loading';
+import { getTeamEliminationState } from '../lib/teamElimination';
 import { classNames, getDivisionLabel, tallyNames } from '../lib/utils';
 
 export default function TeamDetail() {
@@ -48,6 +50,7 @@ export default function TeamDetail() {
 
   const teamMap = new Map(allTeams.map((t) => [t.id, t]));
   const followed = isFollowed(currentTeam.id);
+  const elimination = getTeamEliminationState(currentTeam.id, allMatches, currentTeam.eliminationOverride);
 
   function exportTeamResults() {
     if (!stats) return;
@@ -60,7 +63,7 @@ export default function TeamDetail() {
         ← Sve ekipe
       </Link>
 
-      <div className="card p-6 relative overflow-hidden">
+      <div className={classNames('card p-6 relative overflow-hidden', elimination.effectiveEliminated && 'ring-1 ring-inset ring-brand-red/15 bg-brand-red/[0.03]')}>
         <button
           onClick={() => toggle(currentTeam.id)}
           className={classNames(
@@ -71,14 +74,20 @@ export default function TeamDetail() {
         >
           {followed ? '★' : '☆'}
         </button>
-        <div className="font-cond text-xs tracking-[0.18em] uppercase text-black/40">{getDivisionLabel(currentTeam.division)}</div>
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="font-cond text-xs tracking-[0.18em] uppercase text-black/40">{getDivisionLabel(currentTeam.division)}</div>
+          <TeamEliminationBadge state={elimination} teamCode={currentTeam.code} variant="detail" showManualNote />
+        </div>
         <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div className="min-w-0">
-            <div className="font-display text-6xl leading-none truncate" style={currentTeam.color ? { color: currentTeam.color } : undefined}>
+            <div
+              className={classNames('font-display text-6xl leading-none truncate', elimination.effectiveEliminated && 'opacity-80')}
+              style={currentTeam.color ? { color: currentTeam.color } : undefined}
+            >
               {currentTeam.code}
             </div>
             {currentTeam.displayName && currentTeam.displayName !== currentTeam.code && (
-              <div className="text-lg text-black/65 mt-2">{currentTeam.displayName}</div>
+              <div className={classNames('text-lg mt-2', elimination.effectiveEliminated ? 'text-black/55' : 'text-black/65')}>{currentTeam.displayName}</div>
             )}
             <div className="text-sm text-black/50 mt-2">Kapetan: {currentTeam.captain || 'nije unesen'}</div>
           </div>
@@ -88,7 +97,7 @@ export default function TeamDetail() {
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6">
             <Stat label="Pobjede" value={stats.w} />
             <Stat label="Porazi" value={stats.l} />
-            <Stat label="Dano" value={stats.gf} />
+            <Stat label="Zabijeno" value={stats.gf} />
             <Stat label="Primljeno" value={stats.ga} />
           </div>
         )}

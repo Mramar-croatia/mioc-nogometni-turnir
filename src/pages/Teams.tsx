@@ -1,11 +1,13 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useMatches, useTeams } from '../lib/hooks';
-import { useFollowedTeams } from '../lib/favorites';
-import { buildResultsCsv, downloadCsv } from '../lib/resultsExport';
+import TeamEliminationBadge from '../components/TeamEliminationBadge';
 import { SkeletonTeamGrid } from '../components/Skeleton';
+import { useFollowedTeams } from '../lib/favorites';
+import { useMatches, useTeams } from '../lib/hooks';
+import { buildResultsCsv, downloadCsv } from '../lib/resultsExport';
+import { getTeamEliminationState } from '../lib/teamElimination';
+import type { Match, Team } from '../lib/types';
 import { classNames, getDivisionKey, getDivisionLabel } from '../lib/utils';
-import type { Team } from '../lib/types';
 
 export default function Teams() {
   const teams = useTeams();
@@ -70,9 +72,9 @@ export default function Teams() {
         <div className="card p-8 text-black/45 text-center">Nista nije pronadeno.</div>
       )}
 
-      <Group title="Muski" teams={muski} isFollowed={isFollowed} toggle={toggle} accent="blue" />
+      <Group title="Muski" teams={muski} matches={matches ?? []} isFollowed={isFollowed} toggle={toggle} accent="blue" />
       {zenske.length > 0 && (
-        <Group title="Ženski" teams={zenske} isFollowed={isFollowed} toggle={toggle} accent="red" />
+        <Group title="Ženski" teams={zenske} matches={matches ?? []} isFollowed={isFollowed} toggle={toggle} accent="red" />
       )}
     </div>
   );
@@ -93,12 +95,14 @@ function PageHeader() {
 function Group({
   title,
   teams,
+  matches,
   isFollowed,
   toggle,
   accent,
 }: {
   title: string;
   teams: Team[];
+  matches: Match[];
   isFollowed: (id: string) => boolean;
   toggle: (id: string) => void;
   accent: 'blue' | 'red';
@@ -136,6 +140,7 @@ function Group({
           <TeamRow
             key={t.id}
             team={t}
+            matches={matches}
             followed={isFollowed(t.id)}
             onToggle={() => toggle(t.id)}
           />
@@ -147,15 +152,18 @@ function Group({
 
 function TeamRow({
   team,
+  matches,
   followed,
   onToggle,
 }: {
   team: Team;
+  matches: Match[];
   followed: boolean;
   onToggle: () => void;
 }) {
   const hasCustomName = team.displayName && team.displayName !== team.code;
   const accentColor = team.color || undefined;
+  const elimination = getTeamEliminationState(team.id, matches, team.eliminationOverride);
 
   return (
     <Link
@@ -164,16 +172,18 @@ function TeamRow({
         'relative flex items-center gap-4 rounded-xl px-3 py-3 mb-[5px] last:mb-0 transition',
         followed
           ? 'bg-brand-blue/[0.04] ring-1 ring-inset ring-brand-blue/15 hover:bg-brand-blue/[0.07]'
-          : 'hover:bg-black/[0.03]'
+          : elimination.effectiveEliminated
+            ? 'bg-brand-red/[0.04] ring-1 ring-inset ring-brand-red/15 hover:bg-brand-red/[0.07]'
+            : 'hover:bg-black/[0.03]'
       )}
     >
       <span
         className="absolute left-0 top-3 bottom-3 w-[3px] rounded-full"
-        style={{ background: accentColor ?? 'rgba(0,0,0,0.08)' }}
+        style={{ background: elimination.effectiveEliminated ? '#d42a3c' : accentColor ?? 'rgba(0,0,0,0.08)' }}
       />
       <div className="w-[68px] shrink-0 pl-2">
         <div
-          className="font-display text-[32px] leading-none tracking-wide truncate"
+          className={classNames('font-display text-[32px] leading-none tracking-wide truncate', elimination.effectiveEliminated && 'opacity-80')}
           style={accentColor ? { color: accentColor } : undefined}
         >
           {team.code}
@@ -184,13 +194,18 @@ function TeamRow({
       </div>
 
       <div className="min-w-0 flex-1">
-        {hasCustomName && (
-          <div className="font-semibold text-[15px] truncate">{team.displayName}</div>
-        )}
-        <div className="text-sm text-black/60 truncate">
+        <div className="flex flex-wrap items-center gap-2">
+          {hasCustomName && (
+            <div className={classNames('font-semibold text-[15px] truncate', elimination.effectiveEliminated && 'text-black/70')}>
+              {team.displayName}
+            </div>
+          )}
+          <TeamEliminationBadge state={elimination} teamCode={team.code} />
+        </div>
+        <div className={classNames('text-sm truncate', elimination.effectiveEliminated ? 'text-black/55' : 'text-black/60')}>
           Kapetan: <span className="text-black/80">{team.captain || 'nije unesen'}</span>
         </div>
-        <div className="font-cond text-[10px] uppercase tracking-[0.14em] text-black/40 mt-1">
+        <div className={classNames('font-cond text-[10px] uppercase tracking-[0.14em] mt-1', elimination.effectiveEliminated ? 'text-brand-red/70' : 'text-black/40')}>
           {team.playersCount} igraca
         </div>
       </div>

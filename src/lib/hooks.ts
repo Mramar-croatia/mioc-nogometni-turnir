@@ -6,6 +6,7 @@ import { onAuthStateChanged, User } from 'firebase/auth';
 import { auth, db } from './firebase';
 import type { Team, Match, Goal, Card, Stage } from './types';
 import { useTournamentData } from './TournamentData';
+import { sortGoalsChronologically } from './goals';
 
 function withId<T>(id: string, data: unknown): T {
   return { id, ...(data as object) } as T;
@@ -62,7 +63,7 @@ export function useGoals(matchId: string | undefined) {
     }
     const q = query(collection(db, 'matches', matchId, 'goals'), orderBy('minute'));
     return onSnapshot(q, (snap) => {
-      setGoals(snap.docs.map((d) => withId<Goal>(d.id, d.data())));
+      setGoals(sortGoalsChronologically(snap.docs.map((d) => withId<Goal>(d.id, d.data()))));
     });
   }, [matchId]);
   return goals;

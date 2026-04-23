@@ -72,13 +72,15 @@ export default function Home() {
         />
       )}
 
+      {!empty && <TournamentStatusBanner />}
+
       {!empty && stats && (
         <div className="card p-5 sm:p-6">
           <div className="grid grid-cols-2 gap-3 sm:gap-4">
             <Stat
               label="Odigrano"
               value={`${stats.played}`}
-              suffix={` / ${stats.total}`}
+              suffix={` / 38`}
               accent="blue"
             />
             <Stat
@@ -138,6 +140,16 @@ function PageHeader() {
       </h1>
       <p className="text-black/55 mt-3">Podatci se ažuriraju u realnom vremenu.</p>
     </header>
+  );
+}
+
+function TournamentStatusBanner() {
+  return (
+    <div className="rounded-3xl border border-black/5 bg-white px-5 py-5 shadow-card text-center">
+        <h2 className="font-display text-3xl leading-none tracking-[0.03em] text-brand-dark">
+            Turnir je sada u drugom krugu
+        </h2>
+    </div>
   );
 }
 

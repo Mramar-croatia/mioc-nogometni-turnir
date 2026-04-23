@@ -1,12 +1,15 @@
 import { Link } from 'react-router-dom';
 import { deleteDoc, doc } from 'firebase/firestore';
-import { useTeams } from '../../lib/hooks';
-import { db } from '../../lib/firebase';
+import TeamEliminationBadge from '../../components/TeamEliminationBadge';
 import Loading from '../../components/Loading';
+import { db } from '../../lib/firebase';
+import { useMatches, useTeams } from '../../lib/hooks';
+import { getTeamEliminationState } from '../../lib/teamElimination';
 
 export default function TeamsAdmin() {
   const teams = useTeams();
-  if (teams === null) return <Loading />;
+  const matches = useMatches();
+  if (teams === null || matches === null) return <Loading />;
 
   async function remove(id: string, code: string) {
     if (!confirm(`Obrisati ekipu ${code}? Ovo se ne može poništiti.`)) return;
@@ -34,6 +37,11 @@ export default function TeamsAdmin() {
                 {t.division} · {t.playersCount} igrača
               </div>
             </div>
+            <TeamEliminationBadge
+              state={getTeamEliminationState(t.id, matches, t.eliminationOverride)}
+              teamCode={t.code}
+              showManualNote
+            />
             <Link to={`/admin/ekipe/${t.id}`} className="font-cond text-xs uppercase tracking-widest text-brand-blue">Uredi</Link>
             <button onClick={() => remove(t.id, t.code)} className="text-black/30 hover:text-brand-red text-xl leading-none">×</button>
           </div>

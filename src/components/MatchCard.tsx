@@ -3,6 +3,7 @@ import type { Match, Team, Goal } from '../lib/types';
 import GoalTimeline from './GoalTimeline';
 import { classNames, shortDateHr, dayLabelShort } from '../lib/utils';
 import { useMatchClock } from '../lib/matchClock';
+import { sortGoalsChronologically } from '../lib/goals';
 
 interface Props {
   match: Match;
@@ -18,7 +19,8 @@ const BLUE = '#1d4e9e';
 const RED = '#d42a3c';
 
 export default function MatchCard({ match, home, away, goals = [], index = 0, compact, linkable = true }: Props) {
-  const hasGoals = goals.length > 0 && match.status !== 'scheduled';
+  const orderedGoals = sortGoalsChronologically(goals);
+  const hasGoals = orderedGoals.length > 0 && match.status !== 'scheduled';
   const hasPen = !!match.penalties;
   const finished = match.status === 'finished';
   const live = match.status === 'live';
@@ -169,11 +171,11 @@ export default function MatchCard({ match, home, away, goals = [], index = 0, co
           </div>
         </div>
 
-        {hasGoals && <GoalTimeline goals={goals} homeId={match.homeId} homeColor={homeColor} awayColor={awayColor} />}
+        {hasGoals && <GoalTimeline goals={orderedGoals} homeId={match.homeId} homeColor={homeColor} awayColor={awayColor} />}
 
         {hasGoals && !compact && (
           <div className="mt-2 mb-3.5">
-            {goals.map((g, i) => {
+            {orderedGoals.map((g, i) => {
               const isHome = g.teamId === match.homeId;
               const color = isHome ? homeColor : awayColor;
               return (
