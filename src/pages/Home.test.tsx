@@ -7,16 +7,12 @@ import type { Match, Team } from '../lib/types';
 const mockUseMatches = vi.fn<() => Match[] | null>();
 const mockUseTeams = vi.fn<() => Team[] | null>();
 const mockUseAllGoals = vi.fn<() => { id: string }[] | null>();
-const mockUseFollowedTeams = vi.fn<() => { ids: Set<string> }>();
 
 vi.mock('../lib/hooks', () => ({
   useMatches: () => mockUseMatches(),
   useTeams: () => mockUseTeams(),
   useAllGoals: () => mockUseAllGoals(),
-}));
-
-vi.mock('../lib/favorites', () => ({
-  useFollowedTeams: () => mockUseFollowedTeams(),
+  useTournamentMeta: () => ({ currentStage: 'R2' }),
 }));
 
 const teams: Team[] = [
@@ -68,10 +64,9 @@ describe('Home status banner', () => {
     mockUseMatches.mockReturnValue(matches);
     mockUseTeams.mockReturnValue(teams);
     mockUseAllGoals.mockReturnValue([]);
-    mockUseFollowedTeams.mockReturnValue({ ids: new Set<string>() });
   });
 
-  it('shows the second-round update below the countdown card', () => {
+  it('shows the second-round update above the countdown card', () => {
     render(
       <MemoryRouter>
         <Home />
@@ -79,11 +74,12 @@ describe('Home status banner', () => {
     );
 
     const countdown = screen.getByText(/sljedeća utakmica/i);
-    const banner = screen.getByText(/turnir je sada u drugom krugu/i);
+    const banner = screen.getByText(/aktualna faza/i);
     const bannerCard = banner.parentElement;
 
     expect(banner).toBeInTheDocument();
-    expect(countdown.compareDocumentPosition(banner) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(screen.getByText(/drugi krug/i)).toBeInTheDocument();
+    expect(countdown.compareDocumentPosition(banner) & Node.DOCUMENT_POSITION_PRECEDING).toBeTruthy();
     expect(bannerCard).toHaveClass('bg-white');
   });
 });

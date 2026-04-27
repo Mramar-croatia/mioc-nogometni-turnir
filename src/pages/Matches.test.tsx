@@ -158,7 +158,7 @@ describe('Matches filters', () => {
     expect(screen.getByText('WBA')).toBeInTheDocument();
     expect(screen.queryByText('LBA')).not.toBeInTheDocument();
 
-    await user.click(screen.getByRole('button', { name: 'Utakmice prvog kola' }));
+    await user.click(screen.getByRole('button', { name: '1. kolo' }));
 
     expect(screen.getByText('R1A')).toBeInTheDocument();
     expect(screen.queryByText('WBA')).not.toBeInTheDocument();

@@ -88,6 +88,23 @@ export function useAllGoals(_matches?: Match[] | null) {
   return useTournamentData().allGoals;
 }
 
+export interface TournamentMeta {
+  name?: string;
+  year?: number;
+  organizer?: string;
+  currentStage?: string;
+}
+
+export function useTournamentMeta() {
+  const [meta, setMeta] = useState<TournamentMeta | null>(null);
+  useEffect(() => {
+    return onSnapshot(doc(db, 'tournament', 'meta'), (d) => {
+      setMeta(d.exists() ? (d.data() as TournamentMeta) : null);
+    }, () => setMeta(null));
+  }, []);
+  return meta;
+}
+
 export function useAuthUser() {
   const [user, setUser] = useState<User | null | undefined>(undefined);
   useEffect(() => onAuthStateChanged(auth, (u) => setUser(u)), []);

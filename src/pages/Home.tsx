@@ -1,19 +1,20 @@
 import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { useAllGoals, useMatches, useTeams } from '../lib/hooks';
-import { useFollowedTeams } from '../lib/favorites';
+import { useAllGoals, useMatches, useTeams, useTournamentMeta } from '../lib/hooks';
 import MatchCard from '../components/MatchCard';
 import MatchRow from '../components/MatchRow';
 import Countdown from '../components/Countdown';
 import { SkeletonList, SkeletonMatchCard } from '../components/Skeleton';
 import type { Match, Team } from '../lib/types';
-import { todayIso } from '../lib/utils';
+import { resolveCurrentStage, STAGE_DISPLAY, todayIso } from '../lib/utils';
 
 export default function Home() {
   const matches = useMatches();
   const teams = useTeams();
   const allGoals = useAllGoals(matches);
-  const { ids: followedIds } = useFollowedTeams();
+  const meta = useTournamentMeta();
+  const currentStage = resolveCurrentStage(meta?.currentStage);
+  const stageLabel = STAGE_DISPLAY[currentStage] ?? currentStage;
 
   const stats = useMemo(() => {
     if (!matches) return null;
@@ -47,9 +48,6 @@ export default function Home() {
 
   const heroMatch = live[0] ?? upcoming[0] ?? null;
   const recent = matches.filter((m) => m.status === 'finished').slice(-3).reverse();
-  const followed = matches
-    .filter((m) => (followedIds.has(m.homeId) || followedIds.has(m.awayId)) && m.status !== 'finished')
-    .slice(0, 3);
 
   const empty = matches.length === 0;
 
@@ -57,9 +55,11 @@ export default function Home() {
     <div className="space-y-8">
       <PageHeader />
 
+      {!empty && <TournamentStatusBanner stageLabel={stageLabel} />}
+
       {empty && (
         <div className="card p-8 text-center">
-          <p className="text-black/50">Raspored utakmica jos nije objavljen.</p>
+          <p className="text-black/50">Raspored utakmica još nije objavljen.</p>
         </div>
       )}
 
@@ -71,8 +71,6 @@ export default function Home() {
           live={heroMatch.status === 'live'}
         />
       )}
-
-      {!empty && <TournamentStatusBanner />}
 
       {!empty && stats && (
         <div className="card p-5 sm:p-6">
@@ -93,16 +91,10 @@ export default function Home() {
       )}
 
       {live.length > 1 && (
-        <Section title="Uzivo" accent="red">
+        <Section title="Uživo" accent="red">
           {live.slice(1).map((m, i) => (
             <MatchCard key={m.id} match={m} home={teamMap.get(m.homeId)} away={teamMap.get(m.awayId)} index={i} />
           ))}
-        </Section>
-      )}
-
-      {followed.length > 0 && (
-        <Section title="Ekipe koje pratis">
-          <CompactList list={followed} teamMap={teamMap} />
         </Section>
       )}
 
@@ -143,12 +135,15 @@ function PageHeader() {
   );
 }
 
-function TournamentStatusBanner() {
+function TournamentStatusBanner({ stageLabel }: { stageLabel: string }) {
   return (
     <div className="rounded-3xl border border-black/5 bg-white px-5 py-5 shadow-card text-center">
-        <h2 className="font-display text-3xl leading-none tracking-[0.03em] text-brand-dark">
-            Turnir je sada u drugom krugu
-        </h2>
+      <div className="font-cond text-[10px] font-bold uppercase tracking-[0.18em] text-black/40">
+        Aktualna faza
+      </div>
+      <h2 className="mt-1 font-display text-3xl leading-none tracking-[0.03em] text-brand-dark">
+        {stageLabel}
+      </h2>
     </div>
   );
 }

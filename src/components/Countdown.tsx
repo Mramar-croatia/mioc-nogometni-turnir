@@ -57,7 +57,7 @@ export default function Countdown({ match, home, away, live }: Props) {
                 <span className="absolute inline-flex w-full h-full rounded-full bg-brand-red animate-livePulse" />
                 <span className="relative inline-flex w-2 h-2 rounded-full bg-brand-red" />
               </span>
-              <span className="text-brand-red">Uzivo</span>
+              <span className="text-brand-red">Uživo</span>
             </>
           ) : (
             <>Sljedeća utakmica</>

@@ -59,7 +59,7 @@ describe('MatchCard', () => {
       { id: 'goal-3', playerName: 'First Half Late', teamId: home.id, minute: 9, half: 'I' },
     ];
 
-    render(<MatchCard match={match} home={home} away={away} goals={goals} linkable={false} />);
+    render(<MatchCard match={match} home={home} away={away} goals={goals} linkable={false} showGoalList />);
 
     const content = document.body.textContent ?? '';
     expect(content.indexOf('First Half Late')).toBeGreaterThanOrEqual(0);

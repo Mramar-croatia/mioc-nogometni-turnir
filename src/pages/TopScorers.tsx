@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAllGoals, useMatches, useTeams } from '../lib/hooks';
 import Loading from '../components/Loading';
-import { classNames, getDivisionKey, normalizePersonName } from '../lib/utils';
+import { classNames, getDivisionKey, normalizePersonName, pluralHr } from '../lib/utils';
 import type { Team } from '../lib/types';
 
 type DivFilter = 'all' | 'm' | 'z';
@@ -91,7 +91,7 @@ export default function TopScorers() {
         <div className="flex flex-wrap gap-2">
           {([
             ['all', 'Svi'],
-            ['m', 'Muski'],
+            ['m', 'Muški'],
             ['z', 'Ženski'],
           ] as [DivFilter, string][]).map(([k, label]) => (
             <button
@@ -108,15 +108,27 @@ export default function TopScorers() {
         </div>
       )}
 
-      <input
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        placeholder="Pretrazi strijelca..."
-        className="input"
-      />
+      <div className="relative">
+        <input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Pretraži strijelca..."
+          className="input pr-10"
+        />
+        {search && (
+          <button
+            type="button"
+            onClick={() => setSearch('')}
+            aria-label="Očisti pretragu"
+            className="absolute right-3 top-1/2 -translate-y-1/2 w-6 h-6 grid place-items-center rounded-full text-black/40 hover:bg-black/5 hover:text-black/70"
+          >
+            ×
+          </button>
+        )}
+      </div>
 
       {rows.length === 0 ? (
-        <div className="card p-8 text-center text-black/50">Jos nema golova.</div>
+        <div className="card p-8 text-center text-black/50">Još nema golova.</div>
       ) : (
         <section className="space-y-3">
           <div className="flex items-center gap-2.5">
@@ -125,10 +137,10 @@ export default function TopScorers() {
               Poredak
             </h2>
             <span className="font-cond text-[11px] font-bold uppercase tracking-[0.14em] rounded-full px-2 py-[1px] bg-brand-blue/10 text-brand-blue">
-              {rows.length} {rows.length === 1 ? 'strijelac' : 'strijelaca'}
+              {rows.length} {pluralHr(rows.length, 'strijelac', 'strijelca', 'strijelaca')}
             </span>
             <span className="ml-auto font-cond text-[11px] font-bold uppercase tracking-[0.14em] text-black/45">
-              {totalGoals} golova
+              {totalGoals} {pluralHr(totalGoals, 'gol', 'gola', 'golova')}
             </span>
           </div>
 
@@ -154,7 +166,9 @@ export default function TopScorers() {
 
 function ScorerRow({ row, rank, team }: { row: Row; rank: number; team?: Team }) {
   const hat = Math.max(0, ...row.perMatchCounts) >= 3;
-  const perGame = row.matchesPlayed > 0 ? (row.goals / row.matchesPlayed).toFixed(2) : '—';
+  const perGame = row.matchesPlayed > 0
+    ? (row.goals / row.matchesPlayed).toFixed(2).replace(/\.?0+$/, '')
+    : null;
   const showRank = rank >= 0;
   const podium = showRank ? PODIUM[rank] : undefined;
   const teamColor = team?.color || undefined;
@@ -199,8 +213,12 @@ function ScorerRow({ row, rank, team }: { row: Row; rank: number; team?: Team })
           </span>
           <span className="mx-1.5 text-black/20">·</span>
           {row.matchesPlayed} ut.
-          <span className="mx-1.5 text-black/20">·</span>
-          {perGame} po ut.
+          {perGame !== null && (
+            <>
+              <span className="mx-1.5 text-black/20">·</span>
+              {perGame} po utakmici
+            </>
+          )}
         </div>
       </div>
       <div className="flex items-baseline gap-1 shrink-0">

@@ -13,12 +13,13 @@ interface Props {
   index?: number;
   compact?: boolean;
   linkable?: boolean;
+  showGoalList?: boolean;
 }
 
 const BLUE = '#1d4e9e';
 const RED = '#d42a3c';
 
-export default function MatchCard({ match, home, away, goals = [], index = 0, compact, linkable = true }: Props) {
+export default function MatchCard({ match, home, away, goals = [], index = 0, compact, linkable = true, showGoalList = false }: Props) {
   const orderedGoals = sortGoalsChronologically(goals);
   const hasGoals = orderedGoals.length > 0 && match.status !== 'scheduled';
   const hasPen = !!match.penalties;
@@ -41,7 +42,7 @@ export default function MatchCard({ match, home, away, goals = [], index = 0, co
   const liveClockText = clockPhase === 'HT' ? '—' : clockTime;
 
   const statusLabel =
-    live ? 'UZIVO'
+    live ? 'UŽIVO'
       : finished ? (hasPen ? 'PENALI' : 'KRAJ')
       : `${dayLabelShort(match.date)} ${shortDateHr(match.date)}`;
 
@@ -138,27 +139,27 @@ export default function MatchCard({ match, home, away, goals = [], index = 0, co
               {homeCode}
             </div>
           </div>
-          <div className="flex items-center gap-0.5 bg-brand-dark rounded-2xl px-3.5 py-2 shrink-0">
-            <span
-              key={`h-${match.homeScore}`}
-              className={classNames(
-                'font-display text-[44px] leading-none w-8 text-center text-white',
-                (finished || live) && 'animate-pop'
-              )}
-            >
-              {finished || live ? match.homeScore : '—'}
-            </span>
-            <span className="text-xl text-white/25 mx-0.5">:</span>
-            <span
-              key={`a-${match.awayScore}`}
-              className={classNames(
-                'font-display text-[44px] leading-none w-8 text-center text-white',
-                (finished || live) && 'animate-pop'
-              )}
-            >
-              {finished || live ? match.awayScore : '—'}
-            </span>
-          </div>
+          {(finished || live) ? (
+            <div className="flex items-center gap-0.5 bg-brand-dark rounded-2xl px-3.5 py-2 shrink-0">
+              <span
+                key={`h-${match.homeScore}`}
+                className="font-display text-[44px] leading-none w-8 text-center text-white animate-pop"
+              >
+                {match.homeScore}
+              </span>
+              <span className="text-xl text-white/25 mx-0.5">:</span>
+              <span
+                key={`a-${match.awayScore}`}
+                className="font-display text-[44px] leading-none w-8 text-center text-white animate-pop"
+              >
+                {match.awayScore}
+              </span>
+            </div>
+          ) : (
+            <div className="font-display text-3xl leading-none text-black/55 tabular-nums px-3 shrink-0">
+              {match.time}
+            </div>
+          )}
           <div className="flex-1 flex items-center justify-start pl-3.5 min-w-0">
             <div
               className="font-display text-[42px] leading-none tracking-wide transition-colors truncate"
@@ -173,7 +174,7 @@ export default function MatchCard({ match, home, away, goals = [], index = 0, co
 
         {hasGoals && <GoalTimeline goals={orderedGoals} homeId={match.homeId} homeColor={homeColor} awayColor={awayColor} />}
 
-        {hasGoals && !compact && (
+        {hasGoals && showGoalList && !compact && (
           <div className="mt-2 mb-3.5">
             {orderedGoals.map((g, i) => {
               const isHome = g.teamId === match.homeId;

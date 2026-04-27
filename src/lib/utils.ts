@@ -1,5 +1,5 @@
 export const DAY_NAMES_HR = ['Nedjelja', 'Ponedjeljak', 'Utorak', 'Srijeda', 'Četvrtak', 'Petak', 'Subota'];
-export const MONTHS_HR = ['sijecnja', 'veljace', 'ozujka', 'travnja', 'svibnja', 'lipnja', 'srpnja', 'kolovoza', 'rujna', 'listopada', 'studenoga', 'prosinca'];
+export const MONTHS_HR = ['siječnja', 'veljače', 'ožujka', 'travnja', 'svibnja', 'lipnja', 'srpnja', 'kolovoza', 'rujna', 'listopada', 'studenoga', 'prosinca'];
 
 export function formatDateHr(iso: string): string {
   const d = new Date(iso + 'T00:00:00');
@@ -12,7 +12,7 @@ export function shortDateHr(iso: string): string {
 }
 
 export function dayLabelShort(iso: string): string {
-  const labels = ['NED', 'PON', 'UTO', 'SRI', 'CET', 'PET', 'SUB'];
+  const labels = ['NED', 'PON', 'UTO', 'SRI', 'ČET', 'PET', 'SUB'];
   const d = new Date(iso + 'T00:00:00');
   return labels[d.getDay()];
 }
@@ -28,10 +28,42 @@ export function classNames(...xs: (string | false | null | undefined)[]): string
 
 export const STAGE_LABEL: Record<string, string> = {
   R1: 'I. kolo',
-  WB: 'Pobjednicka',
-  LB: 'Porazena',
+  WB: 'Pobjednička',
+  LB: 'Poražena',
   F: 'Finale',
 };
+
+export const STAGE_DISPLAY: Record<string, string> = {
+  R1: 'Prvi krug',
+  R2: 'Drugi krug',
+  WB: 'Pobjednička grana',
+  LB: 'Gubitnička grana',
+  SF: 'Polufinale',
+  F: 'Finale',
+  GF: 'Veliko finale',
+};
+
+export const FALLBACK_CURRENT_STAGE = 'R2';
+
+const STAGE_ALIAS: Record<string, string> = {
+  R1: 'R2',
+  STAGE1: 'R2',
+  'STAGE 1': 'R2',
+  '1': 'R2',
+  PRVI: 'R2',
+  STAGE2: 'R2',
+  'STAGE 2': 'R2',
+  '2': 'R2',
+  DRUGI: 'R2',
+};
+
+export function resolveCurrentStage(metaStage: string | undefined | null): string {
+  if (!metaStage) return FALLBACK_CURRENT_STAGE;
+  const key = metaStage.trim().toUpperCase();
+  if (STAGE_ALIAS[key]) return STAGE_ALIAS[key];
+  if (Object.prototype.hasOwnProperty.call(STAGE_DISPLAY, key)) return key;
+  return FALLBACK_CURRENT_STAGE;
+}
 
 export function compareMatchSchedule(
   a: { date: string; time: string; bracketSlot?: string | null },
@@ -69,5 +101,13 @@ export function getDivisionKey(value: string | null | undefined): 'm' | 'z' {
 }
 
 export function getDivisionLabel(value: string | null | undefined): string {
-  return getDivisionKey(value) === 'm' ? 'Muski' : 'Ženski';
+  return getDivisionKey(value) === 'm' ? 'Muški' : 'Ženski';
+}
+
+export function pluralHr(n: number, one: string, few: string, many: string): string {
+  const mod10 = n % 10;
+  const mod100 = n % 100;
+  if (mod10 === 1 && mod100 !== 11) return one;
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return few;
+  return many;
 }

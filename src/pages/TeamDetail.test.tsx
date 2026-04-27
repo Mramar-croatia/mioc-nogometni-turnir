@@ -8,20 +8,12 @@ const mockUseTeam = vi.fn<() => Team | null | undefined>();
 const mockUseMatches = vi.fn<() => Match[] | null>();
 const mockUseTeams = vi.fn<() => Team[] | null>();
 const mockUseAllGoals = vi.fn<() => Goal[] | null>();
-const mockUseFollowedTeams = vi.fn<() => {
-  isFollowed: (id: string) => boolean;
-  toggle: (id: string) => void;
-}>();
 
 vi.mock('../lib/hooks', () => ({
   useTeam: () => mockUseTeam(),
   useMatches: () => mockUseMatches(),
   useTeams: () => mockUseTeams(),
   useAllGoals: () => mockUseAllGoals(),
-}));
-
-vi.mock('../lib/favorites', () => ({
-  useFollowedTeams: () => mockUseFollowedTeams(),
 }));
 
 const team: Team = {
@@ -60,10 +52,6 @@ describe('TeamDetail eliminated state', () => {
     mockUseMatches.mockReturnValue(matches);
     mockUseTeams.mockReturnValue([team]);
     mockUseAllGoals.mockReturnValue([]);
-    mockUseFollowedTeams.mockReturnValue({
-      isFollowed: () => false,
-      toggle: vi.fn(),
-    });
   });
 
   it('shows that the team has been eliminated', () => {

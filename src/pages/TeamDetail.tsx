@@ -1,7 +1,6 @@
 import { useMemo } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useAllGoals, useMatches, useTeam, useTeams } from '../lib/hooks';
-import { useFollowedTeams } from '../lib/favorites';
 import { buildResultsCsv, downloadCsv } from '../lib/resultsExport';
 import MatchCard from '../components/MatchCard';
 import TeamEliminationBadge from '../components/TeamEliminationBadge';
@@ -15,7 +14,6 @@ export default function TeamDetail() {
   const allMatches = useMatches();
   const allTeams = useTeams();
   const allGoals = useAllGoals(allMatches);
-  const { isFollowed, toggle } = useFollowedTeams();
 
   const stats = useMemo(() => {
     if (!allMatches || !id) return null;
@@ -45,11 +43,10 @@ export default function TeamDetail() {
   }, [allGoals, id]);
 
   if (team === undefined || allMatches === null || allTeams === null) return <Loading />;
-  if (team === null) return <div className="card p-8 text-center text-black/45">Ekipa nije pronadena.</div>;
+  if (team === null) return <div className="card p-8 text-center text-black/45">Ekipa nije pronađena.</div>;
   const currentTeam = team;
 
   const teamMap = new Map(allTeams.map((t) => [t.id, t]));
-  const followed = isFollowed(currentTeam.id);
   const elimination = getTeamEliminationState(currentTeam.id, allMatches, currentTeam.eliminationOverride);
 
   function exportTeamResults() {
@@ -64,16 +61,6 @@ export default function TeamDetail() {
       </Link>
 
       <div className={classNames('card p-6 relative overflow-hidden', elimination.effectiveEliminated && 'ring-1 ring-inset ring-brand-red/15 bg-brand-red/[0.03]')}>
-        <button
-          onClick={() => toggle(currentTeam.id)}
-          className={classNames(
-            'absolute top-4 right-4 w-10 h-10 grid place-items-center rounded-full text-2xl transition',
-            followed ? 'bg-brand-blue/10 text-brand-blue' : 'text-black/25 hover:bg-black/5 hover:text-black/55'
-          )}
-          aria-label={followed ? 'Prestani pratiti' : 'Prati ekipu'}
-        >
-          {followed ? '★' : '☆'}
-        </button>
         <div className="flex flex-wrap items-center gap-2">
           <div className="font-cond text-xs tracking-[0.18em] uppercase text-black/40">{getDivisionLabel(currentTeam.division)}</div>
           <TeamEliminationBadge state={elimination} teamCode={currentTeam.code} variant="detail" showManualNote />
@@ -89,9 +76,11 @@ export default function TeamDetail() {
             {currentTeam.displayName && currentTeam.displayName !== currentTeam.code && (
               <div className={classNames('text-lg mt-2', elimination.effectiveEliminated ? 'text-black/55' : 'text-black/65')}>{currentTeam.displayName}</div>
             )}
-            <div className="text-sm text-black/50 mt-2">Kapetan: {currentTeam.captain || 'nije unesen'}</div>
+            {currentTeam.captain?.trim() && (
+              <div className="text-sm text-black/50 mt-2">Kapetan: {currentTeam.captain}</div>
+            )}
           </div>
-          <div className="text-sm text-black/50">{currentTeam.playersCount} igraca</div>
+          <div className="text-sm text-black/50">{currentTeam.playersCount} igrača</div>
         </div>
         {stats && (
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6">
@@ -110,11 +99,17 @@ export default function TeamDetail() {
 
       <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
         <section className="space-y-3">
-          <h2 className="font-cond font-extrabold text-xs tracking-[0.18em] uppercase text-black/45">Igraci</h2>
+          <h2 className="font-cond font-extrabold text-xs tracking-[0.18em] uppercase text-black/45">Igrači</h2>
           <div className="card p-4">
             <ul className="divide-y divide-black/5">
               {currentTeam.players.map((p, i) => (
-                <li key={i} className="py-3 flex items-center justify-between gap-3">
+                <li
+                  key={i}
+                  className={classNames(
+                    'py-3 flex items-center justify-between gap-3 px-3 -mx-3',
+                    p.is_captain && 'bg-brand-blue/[0.04] border-l-2 border-brand-blue rounded-r'
+                  )}
+                >
                   <span className="font-medium">{p.name}</span>
                   {p.is_captain && <span className="pill border-brand-blue/10 bg-brand-blue/10 text-brand-blue">Kapetan</span>}
                 </li>

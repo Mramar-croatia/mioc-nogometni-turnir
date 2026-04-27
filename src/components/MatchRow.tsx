@@ -35,7 +35,7 @@ export default function MatchRow({ match, home, away, showDate }: Props) {
       className={classNames(
         'flex items-center rounded-xl px-3.5 py-2.5 mb-[5px] last:mb-0 transition',
         completed
-          ? 'bg-emerald-50/70 ring-1 ring-inset ring-emerald-100 hover:bg-emerald-50'
+          ? 'bg-black/[0.025] hover:bg-black/[0.04]'
           : live
           ? 'bg-brand-red/5 ring-1 ring-inset ring-brand-red/15 hover:bg-brand-red/10'
           : 'hover:bg-black/[0.03]'
@@ -59,7 +59,7 @@ export default function MatchRow({ match, home, away, showDate }: Props) {
         <div
           className={classNames(
             'text-[15px] min-w-[52px] text-right',
-            homeWinner ? 'font-extrabold text-emerald-700' : 'font-bold text-black/85'
+            homeWinner ? 'font-extrabold text-brand-dark' : 'font-bold text-black/85'
           )}
         >
           {home?.code ?? '?'}
@@ -68,7 +68,7 @@ export default function MatchRow({ match, home, away, showDate }: Props) {
           className={classNames(
             'rounded-full px-2.5 py-[3px] text-[10px] font-bold uppercase tracking-[0.06em] shrink-0',
             completed
-              ? 'bg-emerald-100 text-emerald-700'
+              ? 'bg-black/[0.06] text-brand-dark'
               : live
               ? 'bg-brand-red text-white'
               : 'bg-brand-blue/10 text-brand-blue'
@@ -79,7 +79,7 @@ export default function MatchRow({ match, home, away, showDate }: Props) {
         <div
           className={classNames(
             'text-[15px] min-w-[52px] text-left',
-            awayWinner ? 'font-extrabold text-emerald-700' : 'font-bold text-black/85'
+            awayWinner ? 'font-extrabold text-brand-dark' : 'font-bold text-black/85'
           )}
         >
           {away?.code ?? '?'}

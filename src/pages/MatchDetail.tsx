@@ -14,7 +14,7 @@ export default function MatchDetail() {
   const teams = useTeams();
 
   if (match === undefined) return <Loading />;
-  if (match === null) return <div className="card p-8 text-center text-black/45">Utakmica nije pronadena.</div>;
+  if (match === null) return <div className="card p-8 text-center text-black/45">Utakmica nije pronađena.</div>;
   const currentMatch = match;
 
   const mvpTeamCode = currentMatch.mvpTeamId === currentMatch.homeId ? home?.code
@@ -40,6 +40,7 @@ export default function MatchDetail() {
         away={away ?? undefined}
         goals={goals}
         linkable={false}
+        showGoalList
       />
 
       {currentMatch.mvpName && (
@@ -83,15 +84,28 @@ export default function MatchDetail() {
 
       {(home || away) && (
         <div className="grid gap-3 sm:grid-cols-2">
-          {[home, away].map((t) =>
-            t ? (
+          {[home, away].map((t) => {
+            if (!t) return null;
+            const teamGoals = goals.filter((g) => g.teamId === t.id);
+            return (
               <Link key={t.id} to={`/ekipe/${t.id}`} className="card p-4 hover:border-black/15 transition">
                 <div className="font-cond text-xs tracking-[0.16em] uppercase text-black/40">Ekipa</div>
                 <div className="font-display text-4xl leading-none mt-2" style={t.color ? { color: t.color } : undefined}>{t.code}</div>
-                <div className="text-sm text-black/50 mt-2">{t.playersCount} igraca</div>
+                {teamGoals.length === 0 ? (
+                  <div className="text-sm text-black/40 mt-2">Bez golova u ovoj utakmici</div>
+                ) : (
+                  <div className="mt-2 space-y-0.5 text-sm text-black/65">
+                    {teamGoals.map((g) => (
+                      <div key={g.id} className="truncate tabular-nums">
+                        <span className="text-black/40 font-cond mr-1">{g.minute}'</span>
+                        {g.playerName}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </Link>
-            ) : null
-          )}
+            );
+          })}
         </div>
       )}
     </div>

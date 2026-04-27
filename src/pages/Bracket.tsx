@@ -1,153 +1,32 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { SkeletonList } from '../components/Skeleton';
-import { useMatches, useTeams } from '../lib/hooks';
+import { useMatches, useTeams, useTournamentMeta } from '../lib/hooks';
+import { resolveCurrentStage, STAGE_DISPLAY } from '../lib/utils';
 import type { Match, Team } from '../lib/types';
+import {
+  BRACKET_BLUE as BLUE,
+  BRACKET_RED as RED,
+  BRANCHES,
+  DEFAULT_BYE_TEAM_CODES,
+  MATCH_FLOW,
+  MATCH_HINTS,
+  PLANNED_NUMBERS,
+  type BranchId,
+  type BranchPlan,
+  type ByePlan,
+  type RoundPlan,
+} from '../lib/bracketPlan';
 
-const BLUE = '#1d4e9e';
-const RED = '#d42a3c';
-const DARK = '#13152a';
-
-type BranchId = 'GG' | 'DG' | 'VF';
-
-interface ByePlan {
-  id: string;
-  label: string;
-  hint: string;
-  flow: string;
-}
-
-interface RoundPlan {
-  title: string;
-  numbers: string[];
-  note?: string;
-  byes?: ByePlan[];
-}
-
-interface BranchPlan {
-  id: BranchId;
-  title: string;
-  short: string;
-  subtitle: string;
-  accent: string;
-  accentTint: string;
-  rounds: RoundPlan[];
-}
-
-const MATCH_FLOW: Record<string, string> = {
-  U1: 'Pobj. → U6 · Gub. → U12',
-  U2: 'Pobj. → U7 · Gub. → U13',
-  U3: 'Pobj. → U9 · Gub. → U10',
-  U4: 'Pobj. → U9 · Gub. → U10',
-  U5: 'Pobj. → U8 · Gub. → U11',
-  U6: 'Pobj. → U15 · Gub. → U11',
-  U7: 'Pobj. → U15 · Gub. → U14',
-  U8: 'Pobj. → U16 · Gub. → U12',
-  U9: 'Pobj. → U16 · Gub. → U13',
-  U10: 'Pobj. → U14',
-  U11: 'Pobj. → U17',
-  U12: 'Pobj. → U17',
-  U13: 'Pobj. → U18',
-  U14: 'Pobj. → U18',
-  U15: 'Pobj. → U21 · Gub. → U20',
-  U16: 'Pobj. → U21 · Gub. → U19',
-  U17: 'Pobj. → U19',
-  U18: 'Pobj. → U20',
-  U19: 'Pobj. → U22',
-  U20: 'Pobj. → U22',
-  U21: 'Pobj. → U24 · Gub. → U23',
-  U22: 'Pobj. → U23',
-  U23: 'Pobj. → U24 (veliko finale)',
-  U24: 'Ako DG pobijedi → U25',
-  U25: 'Pobjednik = prvak turnira',
-};
-
-const MATCH_HINTS: Record<string, [string, string]> = {
-  U6: ['Prolaz 1', 'Pobj. U1'],
-  U7: ['Pobj. U2', 'Prolaz 2'],
-  U8: ['Prolaz 3', 'Pobj. U5'],
-  U9: ['Pobj. U3', 'Pobj. U4'],
-  U10: ['Gubitnik U3', 'Gubitnik U4'],
-  U11: ['Gubitnik U5', 'Gubitnik U6'],
-  U12: ['Gubitnik U1', 'Gubitnik U8'],
-  U13: ['Gubitnik U2', 'Gubitnik U9'],
-  U14: ['Gubitnik U7', 'Pobj. U10'],
-  U15: ['Pobj. U6', 'Pobj. U7'],
-  U16: ['Pobj. U9', 'Pobj. U8'],
-  U17: ['Pobj. U11', 'Pobj. U12'],
-  U18: ['Pobj. U13', 'Pobj. U14'],
-  U19: ['Gubitnik U16', 'Pobj. U17'],
-  U20: ['Pobj. U18', 'Gubitnik U15'],
-  U21: ['Pobj. U15', 'Pobj. U16'],
-  U22: ['Pobj. U19', 'Pobj. U20'],
-  U23: ['Gubitnik U21', 'Pobj. U22'],
-  U24: ['Pobjednik GG (U21)', 'Pobjednik DG (U23)'],
-  U25: ['Pobjednik GG (U21)', 'Pobjednik DG (U23)'],
-};
-
-const BRANCHES: BranchPlan[] = [
-  {
-    id: 'GG',
-    title: 'Pobjednička grana',
-    short: 'GG',
-    subtitle: 'Put prema finalu bez poraza',
-    accent: BLUE,
-    accentTint: 'rgba(29,78,158,0.08)',
-    rounds: [
-      {
-        title: '1. krug',
-        numbers: ['U1', 'U2', 'U3', 'U4', 'U5'],
-        byes: [
-          { id: 'bye-1', label: 'Prolaz 1', hint: 'Prva slobodna momčad', flow: 'Ide u U6' },
-          { id: 'bye-2', label: 'Prolaz 2', hint: 'Druga slobodna momčad', flow: 'Ide u U7' },
-          { id: 'bye-3', label: 'Prolaz 3', hint: 'Treća slobodna momčad', flow: 'Ide u U8' },
-        ],
-      },
-      { title: 'Četvrtfinale GG', numbers: ['U6', 'U7', 'U8', 'U9'] },
-      { title: 'Polufinale GG', numbers: ['U15', 'U16'] },
-      { title: 'Finale gornje grane', numbers: ['U21'] },
-    ],
-  },
-  {
-    id: 'DG',
-    title: 'Gubitnička grana',
-    short: 'DG',
-    subtitle: 'Druga šansa do finala',
-    accent: RED,
-    accentTint: 'rgba(212,42,60,0.08)',
-    rounds: [
-      { title: '1. krug DG', numbers: ['U10', 'U11', 'U12', 'U13'] },
-      { title: '2. krug DG', numbers: ['U14'] },
-      { title: '3. krug DG', numbers: ['U17', 'U18'] },
-      { title: '4. krug DG', numbers: ['U19', 'U20'] },
-      { title: 'Polufinale DG', numbers: ['U22'] },
-      { title: 'Finale donje grane', numbers: ['U23'] },
-    ],
-  },
-  {
-    id: 'VF',
-    title: 'Veliko finale',
-    short: 'VF',
-    subtitle: 'Završni duel dviju grana',
-    accent: DARK,
-    accentTint: 'rgba(19,21,42,0.08)',
-    rounds: [
-      { title: 'Veliko finale', numbers: ['U24'] },
-      {
-        title: 'Reset finala',
-        numbers: ['U25'],
-        note: 'Igra se samo ako pobjednik donje grane pobijedi u U24 — dvostruka eliminacija zahtijeva dva poraza prvaka.',
-      },
-    ],
-  },
-];
-
-const PLANNED_NUMBERS = new Set(BRANCHES.flatMap((b) => b.rounds.flatMap((r) => r.numbers)));
+type ByeTeams = [Team | undefined, Team | undefined, Team | undefined];
 
 export default function Bracket() {
   const matches = useMatches();
   const teams = useTeams();
+  const meta = useTournamentMeta();
   const [activeBranch, setActiveBranch] = useState<BranchId>('GG');
+  const currentStage = resolveCurrentStage(meta?.currentStage);
+  const stageLabel = STAGE_DISPLAY[currentStage] ?? currentStage;
 
   if (matches === null || teams === null) {
     return (
@@ -169,11 +48,7 @@ export default function Bracket() {
 
   const finished = matches.filter((m) => m.status === 'finished').length;
   const live = matches.filter((m) => m.status === 'live').length;
-
-  const r1Winners = matches
-    .filter((m) => m.stage === 'R1' && m.status === 'finished' && m.winnerId)
-    .map((m) => teamMap.get(m.winnerId!))
-    .filter((t): t is Team => Boolean(t));
+  const byeTeams = getByeTeams(matchByNumber, teamMap);
 
   const unplanned = matches.filter((m) => !m.matchNumber || !PLANNED_NUMBERS.has(m.matchNumber));
 
@@ -184,11 +59,9 @@ export default function Bracket() {
     return { total, done };
   };
 
-  const handleTabClick = (id: BranchId) => {
-    setActiveBranch(id);
-    const el = document.getElementById(`grana-${id.toLowerCase()}`);
-    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  };
+  const handleTabClick = (id: BranchId) => setActiveBranch(id);
+
+  const visibleBranches = BRANCHES.filter((b) => b.id === activeBranch);
 
   return (
     <div className="space-y-8">
@@ -204,8 +77,11 @@ export default function Bracket() {
         </div>
 
         <div className="rounded-3xl border border-black/5 bg-white px-5 py-5 shadow-card text-center">
-          <h2 className="font-display text-3xl leading-none tracking-[0.03em] text-brand-dark">
-            Turnir je sada u drugom krugu
+          <div className="font-cond text-[10px] font-bold uppercase tracking-[0.18em] text-black/40">
+            Aktualna faza
+          </div>
+          <h2 className="mt-1 font-display text-3xl leading-none tracking-[0.03em] text-brand-dark">
+            {stageLabel}
           </h2>
         </div>
       </header>
@@ -239,13 +115,13 @@ export default function Bracket() {
       </nav>
 
       <div className="space-y-10">
-        {BRANCHES.map((b) => (
+        {visibleBranches.map((b) => (
           <BranchSection
             key={b.id}
             branch={b}
             matchByNumber={matchByNumber}
             teamMap={teamMap}
-            r1Winners={r1Winners}
+            byeTeams={byeTeams}
           />
         ))}
 
@@ -261,55 +137,29 @@ function BranchSection({
   branch,
   matchByNumber,
   teamMap,
-  r1Winners,
+  byeTeams,
 }: {
   branch: BranchPlan;
   matchByNumber: Map<string, Match>;
   teamMap: Map<string, Team>;
-  r1Winners: Team[];
+  byeTeams: ByeTeams;
 }) {
-  const counts = useMemo(() => {
-    const nums = branch.rounds.flatMap((r) => r.numbers);
-    const done = nums.filter((n) => matchByNumber.get(n)?.status === 'finished').length;
-    return { total: nums.length, done };
-  }, [branch, matchByNumber]);
-
   return (
     <section
       id={`grana-${branch.id.toLowerCase()}`}
       data-branch={branch.id}
-      className="space-y-5 scroll-mt-24"
+      className="space-y-6 scroll-mt-24"
     >
-      <div
-        className="flex items-center gap-3 rounded-2xl px-4 py-3"
-        style={{ background: branch.accentTint, color: branch.accent }}
-      >
-        <span className="inline-block h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: branch.accent }} />
-        <div className="min-w-0">
-          <h2 className="font-cond text-xs font-extrabold uppercase tracking-[0.18em] truncate">
-            {branch.title}
-          </h2>
-          <p className="font-cond text-[11px] font-semibold tracking-[0.12em] opacity-70 truncate">
-            {branch.subtitle}
-          </p>
-        </div>
-        <span className="ml-auto font-cond text-[11px] font-bold tracking-[0.16em] tabular-nums shrink-0">
-          {counts.done} / {counts.total}
-        </span>
-      </div>
-
-      <div className="space-y-6">
-        {branch.rounds.map((round, idx) => (
-          <RoundBlock
-            key={round.title}
-            round={round}
-            branch={branch}
-            matchByNumber={matchByNumber}
-            teamMap={teamMap}
-            byeTeams={idx === 0 && branch.id === 'GG' ? r1Winners : []}
-          />
-        ))}
-      </div>
+      {branch.rounds.map((round, idx) => (
+        <RoundBlock
+          key={round.title}
+          round={round}
+          branch={branch}
+          matchByNumber={matchByNumber}
+          teamMap={teamMap}
+          byeTeams={idx === 0 && branch.id === 'GG' ? byeTeams : []}
+        />
+      ))}
     </section>
   );
 }
@@ -325,7 +175,7 @@ function RoundBlock({
   branch: BranchPlan;
   matchByNumber: Map<string, Match>;
   teamMap: Map<string, Team>;
-  byeTeams: Team[];
+  byeTeams: Array<Team | undefined>;
 }) {
   return (
     <div className="space-y-3">
@@ -356,6 +206,19 @@ function RoundBlock({
       </div>
     </div>
   );
+}
+
+function getByeTeams(matchByNumber: Map<string, Match>, teamMap: Map<string, Team>): ByeTeams {
+  const u6Home = matchByNumber.get('U6')?.homeId;
+  const u7Away = matchByNumber.get('U7')?.awayId;
+  const u8Home = matchByNumber.get('U8')?.homeId;
+  const teamByCode = new Map(Array.from(teamMap.values(), (team) => [team.code, team] as const));
+
+  return [
+    u6Home ? teamMap.get(u6Home) : teamByCode.get(DEFAULT_BYE_TEAM_CODES[0]),
+    u7Away ? teamMap.get(u7Away) : teamByCode.get(DEFAULT_BYE_TEAM_CODES[1]),
+    u8Home ? teamMap.get(u8Home) : teamByCode.get(DEFAULT_BYE_TEAM_CODES[2]),
+  ];
 }
 
 function MatchCard({
@@ -398,7 +261,7 @@ function MatchCard({
           </div>
           {flow && (
             <div
-              className="mt-1 font-cond text-[10.5px] font-semibold uppercase tracking-[0.14em] truncate"
+              className="mt-1 font-cond text-[10.5px] font-semibold uppercase tracking-[0.14em] leading-snug"
               style={{ color: branch.accent }}
             >
               {flow}
@@ -465,7 +328,7 @@ function ByeCard({ bye, branch, team }: { bye: ByePlan; branch: BranchPlan; team
         <div className="min-w-0 flex-1">
           <div className="font-display text-base leading-none text-brand-dark">{bye.label}</div>
           <div
-            className="mt-1 font-cond text-[10.5px] font-semibold uppercase tracking-[0.14em] truncate"
+            className="mt-1 font-cond text-[10.5px] font-semibold uppercase tracking-[0.14em] leading-snug"
             style={{ color: branch.accent }}
           >
             {bye.flow}

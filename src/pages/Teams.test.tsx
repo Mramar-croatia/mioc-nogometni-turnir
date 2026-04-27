@@ -6,18 +6,10 @@ import type { Match, Team } from '../lib/types';
 
 const mockUseMatches = vi.fn<() => Match[] | null>();
 const mockUseTeams = vi.fn<() => Team[] | null>();
-const mockUseFollowedTeams = vi.fn<() => {
-  isFollowed: (id: string) => boolean;
-  toggle: (id: string) => void;
-}>();
 
 vi.mock('../lib/hooks', () => ({
   useMatches: () => mockUseMatches(),
   useTeams: () => mockUseTeams(),
-}));
-
-vi.mock('../lib/favorites', () => ({
-  useFollowedTeams: () => mockUseFollowedTeams(),
 }));
 
 const teams: Team[] = [
@@ -68,10 +60,6 @@ describe('Teams eliminated state', () => {
   beforeEach(() => {
     mockUseTeams.mockReturnValue(teams);
     mockUseMatches.mockReturnValue(matches);
-    mockUseFollowedTeams.mockReturnValue({
-      isFollowed: () => false,
-      toggle: vi.fn(),
-    });
   });
 
   it('shows an eliminated badge for teams that are out of the tournament', () => {

@@ -1,7 +1,8 @@
 import siteLogo from '../../logo.jpeg';
 import { NavLink, Outlet } from 'react-router-dom';
-import { classNames } from '../lib/utils';
+import { classNames, resolveCurrentStage, STAGE_DISPLAY } from '../lib/utils';
 import { useTournamentData } from '../lib/TournamentData';
+import { useTournamentMeta } from '../lib/hooks';
 
 const NAV = [
   { to: '/', label: 'Pregled', icon: HomeIcon, end: true },
@@ -13,6 +14,9 @@ const NAV = [
 
 export default function Layout() {
   const { refresh, refreshing } = useTournamentData();
+  const meta = useTournamentMeta();
+  const currentStage = resolveCurrentStage(meta?.currentStage);
+  const stageLabel = STAGE_DISPLAY[currentStage] ?? currentStage;
   return (
     <div className="min-h-screen flex flex-col">
       <header className="sticky top-0 z-30 border-b border-black/8 bg-white/90 backdrop-blur">
@@ -23,6 +27,9 @@ export default function Layout() {
             </div>
             <div className="font-display text-4xl leading-none tracking-[0.06em] text-brand-dark">
               2026
+            </div>
+            <div className="mt-1 font-cond text-[10px] font-bold tracking-[0.18em] uppercase text-brand-red">
+              {stageLabel}
             </div>
           </NavLink>
           <div className="flex items-center gap-3 shrink-0">
@@ -76,7 +83,7 @@ export default function Layout() {
       <footer className="max-w-5xl mx-auto w-full px-4 py-8 pb-24 sm:pb-8 text-sm text-black/35">
         <div className="border-t border-black/8 pt-4 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
           <span>XV. gimnazija, Zagreb</span>
-          <span className="font-cond uppercase tracking-[0.16em]">Vijeće ucenika</span>
+          <span className="font-cond uppercase tracking-[0.16em]">Vijeće učenika</span>
         </div>
       </footer>
 
